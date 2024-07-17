@@ -2181,7 +2181,7 @@ Anderson,Kara,lngcrlcut,$107.00,2024-05-24`;
     setInput('');
   };
 
-  const uniqueServices = useMemo(() => [...new Set(allClients.map(client => client.service))], [allClients]);
+  const uniqueServices = useMemo(() => Array.from(new Set(allClients.map(client => client.service))), [allClients]);
 
   return (
     <div className="flex flex-col h-screen bg-black text-white p-4">
