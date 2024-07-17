@@ -1,0 +1,2321 @@
+"use client";
+
+import React, { useState, useMemo } from 'react';
+
+interface Client {
+  name: string;
+  service: string;
+  price: number;
+  date: string;
+}
+
+interface Message {
+  text: string;
+  isBot: boolean;
+}
+
+const SalonChatbot: React.FC = () => {
+  const [messages, setMessages] = useState<Message[]>([
+    { text: "Welcome to the Salon Client Info System. Type 'show clients' to see the client table.", isBot: true }
+  ]);
+  const [input, setInput] = useState('');
+  const [showTable, setShowTable] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Client | null; direction: 'ascending' | 'descending' }>({ key: null, direction: 'ascending' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [filters, setFilters] = useState({
+    service: '',
+    dateStart: '',
+    dateEnd: ''
+  });
+
+  const parseCSVData = (csvString: string): Client[] => {
+    const lines = csvString.trim().split('\n');
+    return lines.map(line => {
+      const [lastName, firstName, service, price, date] = line.split(',');
+      return {
+        name: `${firstName} ${lastName}`,
+        service,
+        price: parseFloat(price.replace('$', '')),
+        date
+      };
+    });
+  };
+
+  const allClients = useMemo(() => {
+    const csvData = `Collier,Amber,mullet,$25.00,2023-12-04
+Colon,Devyn,fdclipper,$0.00,2023-12-04
+Haske,Toddy,shrtcut,$69.00,2023-12-04
+Johnson,Leah,lngcrlcut,$107.00,2023-12-04
+Johnson,Leah,cut4,$88.00,2023-12-04
+Johnson,Leah,acid,$20.00,2023-12-04
+Klochack,Peyton,mullet,$70.00,2023-12-04
+Kulaszewski,Ethan,lngcut,$89.00,2023-12-04
+Kulaszewski,Ethan,acid,$20.00,2023-12-04
+Randall,Jessica,medct,$84.00,2023-12-04
+Schopmeyer,Mia,lngcut,$89.00,2023-12-04
+Thomas,Hunter,lngcut,$89.00,2023-12-04
+Wallington,Brittney,mullet,$70.00,2023-12-04
+Collier,Amber,mullet,$25.00,2023-12-04
+Colon,Devyn,fdclipper,$0.00,2023-12-04
+Haske,Toddy,shrtcut,$69.00,2023-12-04
+Johnson,Leah,lngcrlcut,$107.00,2023-12-04
+Johnson,Leah,cut4,$88.00,2023-12-04
+Johnson,Leah,acid,$20.00,2023-12-04
+Klochack,Peyton,mullet,$70.00,2023-12-04
+Kulaszewski,Ethan,lngcut,$89.00,2023-12-04
+Kulaszewski,Ethan,acid,$20.00,2023-12-04
+Randall,Jessica,medct,$84.00,2023-12-04
+Schopmeyer,Mia,lngcut,$89.00,2023-12-04
+Thomas,Hunter,lngcut,$89.00,2023-12-04
+Wallington,Brittney,mullet,$70.00,2023-12-04
+Ali,Ashaq,medct,$75.00,2023-12-05
+Hanlon,Kelly,mullet,$70.00,2023-12-05
+Krontz,Xander,mullet,$70.00,2023-12-05
+LaRue,Iman,acid,$20.00,2023-12-05
+Lehr,Allison,lngcrlcut,$107.00,2023-12-05
+Lehr,Allison,acid,$20.00,2023-12-05
+McAllister,Jaylxon,medcrlcut,$80.00,2023-12-05
+McAllister,Jaylxon,bt,$20.00,2023-12-05
+Richey,Lisa,medct,$84.00,2023-12-05
+Sherrill,Amanda,shtcrlcut,$73.00,2023-12-05
+Thompson,Anna,medcrlcut,$80.00,2023-12-05
+Ali,Ashaq,medct,$75.00,2023-12-05
+Hanlon,Kelly,mullet,$70.00,2023-12-05
+Krontz,Xander,mullet,$70.00,2023-12-05
+LaRue,Iman,acid,$20.00,2023-12-05
+Lehr,Allison,lngcrlcut,$107.00,2023-12-05
+Lehr,Allison,acid,$20.00,2023-12-05
+McAllister,Jaylxon,medcrlcut,$80.00,2023-12-05
+McAllister,Jaylxon,bt,$20.00,2023-12-05
+Richey,Lisa,medct,$84.00,2023-12-05
+Sherrill,Amanda,shtcrlcut,$73.00,2023-12-05
+Thompson,Anna,medcrlcut,$80.00,2023-12-05
+Abood,Rhonda,medct,$84.00,2023-12-07
+Abood,Rhonda,acid,$20.00,2023-12-07
+Alsip,Andrew,shrtcut,$69.00,2023-12-07
+Alsip,Andrew,acid,$20.00,2023-12-07
+Butcher,Heidi,shrtcut,$69.00,2023-12-07
+Cotner,Russ,mullet,$70.00,2023-12-07
+Fisher,Lauren,lngcut,$89.00,2023-12-07
+Gelfund,Mckenzie,adj,$0.00,2023-12-07
+Huberty,Sean,mullet,$70.00,2023-12-07
+Huberty,Sean,brdt,$20.00,2023-12-07
+Orozco,Carolina,lngcut,$89.00,2023-12-07
+Orozco,Carolina,acid,$20.00,2023-12-07
+Osann,Savina,mullet,$50.00,2023-12-07
+Potts,Keke,lngcut,$69.00,2023-12-07
+Webb,Jaye,mullet,$70.00,2023-12-07
+Wisdom,Hannah,medct,$75.00,2023-12-07
+Wisdom,Hannah,acid,$20.00,2023-12-07
+Abood,Rhonda,medct,$84.00,2023-12-07
+Abood,Rhonda,acid,$20.00,2023-12-07
+Alsip,Andrew,shrtcut,$69.00,2023-12-07
+Alsip,Andrew,acid,$20.00,2023-12-07
+Butcher,Heidi,shrtcut,$69.00,2023-12-07
+Cotner,Russ,mullet,$70.00,2023-12-07
+Fisher,Lauren,lngcut,$89.00,2023-12-07
+Gelfund,Mckenzie,adj,$0.00,2023-12-07
+Huberty,Sean,mullet,$70.00,2023-12-07
+Huberty,Sean,brdt,$20.00,2023-12-07
+Orozco,Carolina,lngcut,$89.00,2023-12-07
+Orozco,Carolina,acid,$20.00,2023-12-07
+Osann,Savina,mullet,$50.00,2023-12-07
+Potts,Keke,lngcut,$69.00,2023-12-07
+Webb,Jaye,mullet,$70.00,2023-12-07
+Wisdom,Hannah,medct,$75.00,2023-12-07
+Wisdom,Hannah,acid,$20.00,2023-12-07
+Connalley,Shyleen,crlymullet,$73.00,2023-12-08
+Connalley,Shyleen,acid,$20.00,2023-12-08
+Costello,Rachel,lngcut,$89.00,2023-12-08
+Evans,Adrianne,lngcrlcut,$107.00,2023-12-08
+Evans,Adrianne,acid,$20.00,2023-12-08
+Groll,Amanda,lngcrlcut,$107.00,2023-12-08
+Groll,Amanda,acid,$20.00,2023-12-08
+Ketema,Meraf,lngcrlcut,$107.00,2023-12-08
+Ketema,Meraf,acid,$20.00,2023-12-08
+Light,Nora,medcrlcut,$80.00,2023-12-08
+Peralta,Elizabeth,lngcut,$89.00,2023-12-08
+Peterson,Adina,lngcrlcut,$107.00,2023-12-08
+Connalley,Shyleen,crlymullet,$73.00,2023-12-08
+Connalley,Shyleen,acid,$20.00,2023-12-08
+Costello,Rachel,lngcut,$89.00,2023-12-08
+Evans,Adrianne,lngcrlcut,$107.00,2023-12-08
+Evans,Adrianne,acid,$20.00,2023-12-08
+Groll,Amanda,lngcrlcut,$107.00,2023-12-08
+Groll,Amanda,acid,$20.00,2023-12-08
+Ketema,Meraf,lngcrlcut,$107.00,2023-12-08
+Ketema,Meraf,acid,$20.00,2023-12-08
+Light,Nora,medcrlcut,$80.00,2023-12-08
+Peralta,Elizabeth,lngcut,$89.00,2023-12-08
+Peterson,Adina,lngcrlcut,$107.00,2023-12-08
+Baker,Megan,medcrlcut,$80.00,2023-12-09
+Baker,Megan,acid,$20.00,2023-12-09
+Burkhardt,Katie,lngcut,$89.00,2023-12-09
+Eaton,Shelby,mullet,$70.00,2023-12-09
+Green,Kay,medcrlcut,$80.00,2023-12-09
+Green,Kay,acid,$20.00,2023-12-09
+Humes,Jessica,lngcrlcut,$107.00,2023-12-09
+Meyers,Emily,mullet,$70.00,2023-12-09
+Zackerman,Caroline,lngcrlcut,$107.00,2023-12-09
+Zackerman,Caroline,acid,$20.00,2023-12-09
+Baker,Megan,medcrlcut,$80.00,2023-12-09
+Baker,Megan,acid,$20.00,2023-12-09
+Burkhardt,Katie,lngcut,$89.00,2023-12-09
+Eaton,Shelby,mullet,$70.00,2023-12-09
+Green,Kay,medcrlcut,$80.00,2023-12-09
+Green,Kay,acid,$20.00,2023-12-09
+Humes,Jessica,lngcrlcut,$107.00,2023-12-09
+Meyers,Emily,mullet,$70.00,2023-12-09
+Zackerman,Caroline,lngcrlcut,$107.00,2023-12-09
+Zackerman,Caroline,acid,$20.00,2023-12-09
+DeHaan,Kyle,mullet,$50.00,2023-12-11
+Goulding,Karen,acid,$16.00,2023-12-11
+Goulding,Karen,lngcrlcut,$85.60,2023-12-11
+Gray,Shannon,lngcrlcut,$107.00,2023-12-11
+Gray,Shannon,acid,$20.00,2023-12-11
+Lara,Blaire,mullet,$70.00,2023-12-11
+Reason,Tommy,lngcrlcut,$107.00,2023-12-11
+Reason,Tommy,acid,$20.00,2023-12-11
+Tarasenko,Travis,fdclipper,$50.00,2023-12-11
+Uhl,Kellyn,shrtcut,$69.00,2023-12-11
+DeHaan,Kyle,mullet,$50.00,2023-12-11
+Goulding,Karen,acid,$16.00,2023-12-11
+Goulding,Karen,lngcrlcut,$85.60,2023-12-11
+Gray,Shannon,lngcrlcut,$107.00,2023-12-11
+Gray,Shannon,acid,$20.00,2023-12-11
+Lara,Blaire,mullet,$70.00,2023-12-11
+Reason,Tommy,lngcrlcut,$107.00,2023-12-11
+Reason,Tommy,acid,$20.00,2023-12-11
+Tarasenko,Travis,fdclipper,$50.00,2023-12-11
+Uhl,Kellyn,shrtcut,$69.00,2023-12-11
+choi,erin,medcrlcut,$80.00,2023-12-12
+clark,corrine,mullet,$50.00,2023-12-12
+eddy,donald,mullet,$70.00,2023-12-12
+fisher,dakota,mullet,$70.00,2023-12-12
+fisher,dakota,acid,$20.00,2023-12-12
+johnson,bailey,shrtcut,$69.00,2023-12-12
+johnson,bailey,acid,$20.00,2023-12-12
+layne,rachel,mullet,$70.00,2023-12-12
+lundberg,rain,medct,$84.00,2023-12-12
+lundberg,rain,brt,$17.00,2023-12-12
+lundberg,rain,brww,$17.00,2023-12-12
+lundberg,rain,acid,$20.00,2023-12-12
+thurman,payton,mullet,$70.00,2023-12-12
+cowell,leslie,lngcrlcut,$76.30,2023-12-14
+dahlgren,sabrina,medcrlcut,$80.00,2023-12-14
+dahlgren,sabrina,acid,$20.00,2023-12-14
+demaret,payton,lngcut,$89.00,2023-12-14
+gelsone,ted,mullet,$70.00,2023-12-14
+grady,kristen,medcrlut,$80.00,2023-12-14
+grady,kristen,acid,$20.00,2023-12-14
+hatt,rachel,mullet,$70.00,2023-12-14
+jordan,chloe,crlymullet,$73.00,2023-12-14
+jordan,chloe,acid,$20.00,2023-12-14
+kennedy,lena,mullet,$70.00,2023-12-14
+rousell,emily,lngcrlcut,$107.00,2023-12-14
+rousell,emily,acid,$20.00,2023-12-14
+stratilatov,sara,lngcrlcut,$107.00,2023-12-14
+stratilatov,sara,cut4,$88.00,2023-12-14
+stratilatov,sara,oaoc,$28.00,2023-12-14
+stratilatov,sara,acid,$20.00,2023-12-14
+wouters,danny,crlymullet,$73.00,2023-12-14
+wouters,danny,mullet,$35.00,2023-12-14
+yahonnes,merkeb,medcrlcut,$80.00,2023-12-14
+yahonnes,merkeb,acid,$20.00,2023-12-14
+armstrong,natalie,lngcut,$89.00,2023-12-15
+bartrem,william,mullet,$70.00,2023-12-15
+bartrem,william,acid,$20.00,2023-12-15
+brandon,shannon,mullet,$70.00,2023-12-15
+feldpausch,desiree,shtcrlcut,$73.00,2023-12-15
+haueter,ami,clrct,$0.00,2023-12-15
+haueter,ami,cut4,$88.00,2023-12-15
+haueter,ami,medcrlcut,$80.00,2023-12-15
+hickmott,brienna,lngcrlcut,$107.00,2023-12-15
+hickmott,brienna,acid,$20.00,2023-12-15
+niemasz,brendan,mullet,$70.00,2023-12-15
+niemasz,brendan,brdt,$20.00,2023-12-15
+quandt,meagan,mullet,$70.00,2023-12-15
+saylor,nolan,shtrcrlcut,$73.00,2023-12-15
+booker,shawn,mullet,$70.00,2023-12-16
+brundage,adam,mullet,$70.00,2023-12-16
+mankarious,emily,lngcrlcut,$107.00,2023-12-16
+mankarious,emily,acid,$20.00,2023-12-16
+mclean,summer,lngcrlcut,$107.00,2023-12-16
+mclean,summer,acid,$20.00,2023-12-16
+merica,gage,mullet,$70.00,2023-12-16
+merica,gage,brdt,$20.00,2023-12-16
+routowicz,christopher,mullet,$50.00,2023-12-16
+smith,tyler,crlymullet,$73.00,2023-12-16
+smith,tyler,brdt,$20.00,2023-12-16
+smith,tyler,acid,$20.00,2023-12-16
+white,geralyn,lngcut,$89.00,2023-12-16
+white,geralyn,acid,$20.00,2023-12-16
+beals,kristen,acid,$20.00,2023-12-18
+brado,dawn,lngcrlcut,$107.00,2023-12-18
+forbush,troy,medcrlcut,$80.00,2023-12-18
+hernandez,susie,clrbd,$0.00,2023-12-18
+hernandez,susie,cut4,$88.00,2023-12-18
+hernandez,susie,oaoc,$28.00,2023-12-18
+mcBribe,cody,mullet,$70.00,2023-12-18
+mcBribe,cody,acid,$20.00,2023-12-18
+mckimom,alison,shtcrlcut,$73.00,2023-12-18
+moore,alison,lngrlcut,$107.00,2023-12-18
+moore,alison,acid,$20.00,2023-12-18
+patrick,samantha,lngcut,$89.00,2023-12-18
+roth,chloe,acid,$20.00,2023-12-18
+roth,chloe,lngcrlcut,$107.00,2023-12-18
+Bosanic,Ben,mullet,$70.00,2023-12-21
+Byrd,Ayden,mullet,$70.00,2023-12-21
+Cattell,Reagan,medct,$84.00,2023-12-21
+Childress,Bub,mullet,$70.00,2023-12-21
+Cleveland,Eloise,kcc,$50.00,2023-12-21
+Cleveland,Iris,kcc,$50.00,2023-12-21
+Dahlgren,Sabrina,adj,$0.00,2023-12-21
+Hunter,Nick,crlymullet,$73.00,2023-12-21
+Kasinachn,Gayathri,lngcrlcut,$107.00,2023-12-21
+Kasinachn,Gayathri,acid,$0.00,2023-12-21
+Laing,Emily,medct,$84.00,2023-12-21
+Laing,Emily,acid,$20.00,2023-12-21
+Said,Alec,medct,$84.00,2023-12-21
+Tobin,Sarah,shrtcut,$69.00,2023-12-21
+Tobin,Sarah,acid,$0.00,2023-12-21
+Bosanic,Ben,mullet,$70.00,2023-12-21
+Byrd,Ayden,mullet,$70.00,2023-12-21
+Cattell,Reagan,medct,$84.00,2023-12-21
+Childress,Bub,mullet,$70.00,2023-12-21
+Cleveland,Eloise,kcc,$50.00,2023-12-21
+Cleveland,Iris,kcc,$50.00,2023-12-21
+Dahlgren,Sabrina,adj,$0.00,2023-12-21
+Hunter,Nick,crlymullet,$73.00,2023-12-21
+Kasinachn,Gayathri,lngcrlcut,$107.00,2023-12-21
+Kasinachn,Gayathri,acid,$0.00,2023-12-21
+Laing,Emily,medct,$84.00,2023-12-21
+Laing,Emily,acid,$20.00,2023-12-21
+Said,Alec,medct,$84.00,2023-12-21
+Tobin,Sarah,shrtcut,$69.00,2023-12-21
+Tobin,Sarah,acid,$0.00,2023-12-21
+Brasseur,Aime,shtcrlcut,$73.00,2023-12-22
+Brasseur,Aime,acid,$0.00,2023-12-22
+Decator,Olivia,mullet,$70.00,2023-12-22
+Frutos,Alissa,crlymullet,$73.00,2023-12-22
+Frutos,Raya,kcc,$50.00,2023-12-22
+Hall,Leslie,shtcrlcut,$73.00,2023-12-22
+Hall,Leslie,acid,$20.00,2023-12-22
+Oppermann,Bryson,crlymullet,$73.00,2023-12-22
+Oppermann,Bryson,acid,$20.00,2023-12-22
+Plotts,Alyssa,lngcut,$59.00,2023-12-22
+Weaver,Cosette,shtcrlcut,$73.00,2023-12-22
+Weaver,Cosette,acid,$20.00,2023-12-22
+Brasseur,Aime,shtcrlcut,$73.00,2023-12-22
+Brasseur,Aime,acid,$0.00,2023-12-22
+Decator,Olivia,mullet,$70.00,2023-12-22
+Frutos,Alissa,crlymullet,$73.00,2023-12-22
+Frutos,Raya,kcc,$50.00,2023-12-22
+Hall,Leslie,shtcrlcut,$73.00,2023-12-22
+Hall,Leslie,acid,$20.00,2023-12-22
+Oppermann,Bryson,crlymullet,$73.00,2023-12-22
+Oppermann,Bryson,acid,$20.00,2023-12-22
+Plotts,Alyssa,lngcut,$59.00,2023-12-22
+Weaver,Cosette,shtcrlcut,$73.00,2023-12-22
+Weaver,Cosette,acid,$20.00,2023-12-22
+Brinkley-Batterbee,Rebecca,medcrlcut,$80.00,2023-12-23
+Brinkley-Batterbee,Rebecca,acid,$20.00,2023-12-23
+Luther,Kathleen,lngcut,$89.00,2023-12-23
+Luther,Kathleen,acid,$20.00,2023-12-23
+Odom,Christopher,mullet,$70.00,2023-12-23
+Okeefe,Finn,shtcrlcut,$73.00,2023-12-23
+Okeefe,Finn,acid,$20.00,2023-12-23
+Reynolds,Ryen,lngcrlcut,$107.00,2023-12-23
+Rode,Lila,mullet,$70.00,2023-12-23
+Woodward,Jessica,medcrlcut,$80.00,2023-12-23
+Woodward,Jessica,acid,$20.00,2023-12-23
+Brinkley-Batterbee,Rebecca,medcrlcut,$80.00,2023-12-23
+Brinkley-Batterbee,Rebecca,acid,$20.00,2023-12-23
+Luther,Kathleen,lngcut,$89.00,2023-12-23
+Luther,Kathleen,acid,$20.00,2023-12-23
+Odom,Christopher,mullet,$70.00,2023-12-23
+Okeefe,Finn,shtcrlcut,$73.00,2023-12-23
+Okeefe,Finn,acid,$20.00,2023-12-23
+Reynolds,Ryen,lngcrlcut,$107.00,2023-12-23
+Rode,Lila,mullet,$70.00,2023-12-23
+Woodward,Jessica,medcrlcut,$80.00,2023-12-23
+Woodward,Jessica,acid,$20.00,2023-12-23
+Bermejo,Jessica,medcrlcut,$80.00,2023-12-26
+Bermejo,Jessica,acid,$20.00,2023-12-26
+Carroll,Lauren,lngcrlcut,$107.00,2023-12-26
+Carroll,Lauren,acid,$20.00,2023-12-26
+Florian,Jason,mullet,$70.00,2023-12-26
+Gross,Abbie,lngcrlcut,$107.00,2023-12-26
+Gross,Abbie,acid,$20.00,2023-12-26
+Martin,Hannah,acid,$20.00,2023-12-26
+Martin,Hannah,crlymullet,$77.00,2023-12-26
+Rivet,Stacey,medcrlcut,$80.00,2023-12-26
+Rivet,Stacey,cut4,$88.00,2023-12-26
+Rivet,Stacey,oaoc,$28.00,2023-12-26
+Shaughnessy,Shelby,mullet,$70.00,2023-12-26
+Smith,Janet,mullet,$70.00,2023-12-26
+Bermejo,Jessica,medcrlcut,$80.00,2023-12-26
+Bermejo,Jessica,acid,$20.00,2023-12-26
+Carroll,Lauren,lngcrlcut,$107.00,2023-12-26
+Carroll,Lauren,acid,$20.00,2023-12-26
+Florian,Jason,mullet,$70.00,2023-12-26
+Gross,Abbie,lngcrlcut,$107.00,2023-12-26
+Gross,Abbie,acid,$20.00,2023-12-26
+Martin,Hannah,acid,$20.00,2023-12-26
+Martin,Hannah,crlymullet,$77.00,2023-12-26
+Rivet,Stacey,medcrlcut,$80.00,2023-12-26
+Rivet,Stacey,cut4,$88.00,2023-12-26
+Rivet,Stacey,oaoc,$28.00,2023-12-26
+Shaughnessy,Shelby,mullet,$70.00,2023-12-26
+Smith,Janet,mullet,$70.00,2023-12-26
+Bierens,Jannah,lngcrlcut,$107.00,2023-12-28
+Campau,Cameron,mullet,$70.00,2023-12-28
+Campau,Cameron,acid,$20.00,2023-12-28
+Chappo,Jace,mullet,$70.00,2023-12-28
+Gallegos,Susana,cut4,$88.00,2023-12-28
+Gallegos,Susana,lngcrlcut,$107.00,2023-12-28
+Green,Murphy,kcc,$50.00,2023-12-28
+Green,Murphy,shtcrlcut,$60.00,2023-12-28
+Harris,Jazmyn,medcrlcut,$98.00,2023-12-28
+Kiblawi,Emily,lngcrlcut,$107.00,2023-12-28
+Kiblawi,Emily,acid,$20.00,2023-12-28
+Odberg,Stefanie,medcrlcut,$98.00,2023-12-28
+Srda,Sarah,lngcrlcut,$107.00,2023-12-28
+Srda,Sarah,acid,$20.00,2023-12-28
+Walker,Abony,lngcrlcut,$107.00,2023-12-28
+Walker,Abony,acid,$20.00,2023-12-28
+Yee,Sarah,lngcut,$98.00,2023-12-28
+Bierens,Jannah,lngcrlcut,$107.00,2023-12-28
+Campau,Cameron,mullet,$70.00,2023-12-28
+Campau,Cameron,acid,$20.00,2023-12-28
+Chappo,Jace,mullet,$70.00,2023-12-28
+Gallegos,Susana,cut4,$88.00,2023-12-28
+Gallegos,Susana,lngcrlcut,$107.00,2023-12-28
+Green,Murphy,kcc,$50.00,2023-12-28
+Green,Murphy,shtcrlcut,$60.00,2023-12-28
+Harris,Jazmyn,medcrlcut,$98.00,2023-12-28
+Kiblawi,Emily,lngcrlcut,$107.00,2023-12-28
+Kiblawi,Emily,acid,$20.00,2023-12-28
+Odberg,Stefanie,medcrlcut,$98.00,2023-12-28
+Srda,Sarah,lngcrlcut,$107.00,2023-12-28
+Srda,Sarah,acid,$20.00,2023-12-28
+Walker,Abony,lngcrlcut,$107.00,2023-12-28
+Walker,Abony,acid,$20.00,2023-12-28
+Yee,Sarah,lngcut,$98.00,2023-12-28
+Barlow,Alicia,lngcrlcut,$107.00,2023-12-29
+Barlow,Alicia,acid,$20.00,2023-12-29
+Gardner,Colin,mullet,$70.00,2023-12-29
+Gardner,Colin,acid,$20.00,2023-12-29
+Levinsohn,Reuben,shtcrlcut,$86.00,2023-12-29
+Levinsohn,Reuben,acid,$20.00,2023-12-29
+Miller,Jillian,lngcut,$98.00,2023-12-29
+Miller,Jillian,cut4,$88.00,2023-12-29
+Miller,Jillian,acid,$20.00,2023-12-29
+Nolan,Amara,shtcrlcut,$86.00,2023-12-29
+Taylor,Mariah,lngcrlcut,$107.00,2023-12-29
+Taylor,Mariah,detangle,$10.00,2023-12-29
+Taylor,Mariah,acid,$20.00,2023-12-29
+Barlow,Alicia,lngcrlcut,$107.00,2023-12-29
+Barlow,Alicia,acid,$20.00,2023-12-29
+Gardner,Colin,mullet,$70.00,2023-12-29
+Gardner,Colin,acid,$20.00,2023-12-29
+Levinsohn,Reuben,shtcrlcut,$86.00,2023-12-29
+Levinsohn,Reuben,acid,$20.00,2023-12-29
+Miller,Jillian,lngcut,$98.00,2023-12-29
+Miller,Jillian,cut4,$88.00,2023-12-29
+Miller,Jillian,acid,$20.00,2023-12-29
+Nolan,Amara,shtcrlcut,$86.00,2023-12-29
+Taylor,Mariah,lngcrlcut,$107.00,2023-12-29
+Taylor,Mariah,detangle,$10.00,2023-12-29
+Taylor,Mariah,acid,$20.00,2023-12-29
+Colton,Chynna,lngcut,$98.00,2023-12-30
+Colton,Chynna,acid,$20.00,2023-12-30
+Cook,Nick,medcrlcut,$98.00,2023-12-30
+Cook,Nick,acid,$20.00,2023-12-30
+Decator,Olivia,mullet,$70.00,2023-12-30
+Decator,Olivia,acid,$20.00,2023-12-30
+Mason,Hadley,shtcrlcut,$86.00,2023-12-30
+Mason,Hadley,acid,$0.00,2023-12-30
+Morofsky,Austin,mullet,$70.00,2023-12-30
+Morofsky,Austin,acid,$20.00,2023-12-30
+Shuptar,Ericka,lngcrlcut,$107.00,2023-12-30
+Shuptar,Ericka,acid,$20.00,2023-12-30
+Colton,Chynna,lngcut,$98.00,2023-12-30
+Colton,Chynna,acid,$20.00,2023-12-30
+Cook,Nick,medcrlcut,$98.00,2023-12-30
+Cook,Nick,acid,$20.00,2023-12-30
+Decator,Olivia,mullet,$70.00,2023-12-30
+Decator,Olivia,acid,$20.00,2023-12-30
+Mason,Hadley,shtcrlcut,$86.00,2023-12-30
+Mason,Hadley,acid,$0.00,2023-12-30
+Morofsky,Austin,mullet,$70.00,2023-12-30
+Morofsky,Austin,acid,$20.00,2023-12-30
+Shuptar,Ericka,lngcrlcut,$107.00,2023-12-30
+Shuptar,Ericka,acid,$20.00,2023-12-30
+Adame,Sarah,mullet,$70.00,2024-01-02
+Brown,Troy,mullet,$70.00,2024-01-02
+Galarsa,Laila,mullet,$70.00,2024-01-02
+Henry,Alexis,lngcrlcut,$107.00,2024-01-02
+Jankowski,Maegan,medct,$84.00,2024-01-02
+Jankowski,Maegan,acid,$20.00,2024-01-02
+Keogh,Becky,medcrlcut,$98.00,2024-01-02
+Keogh,Becky,acid,$20.00,2024-01-02
+Sheehan-DArrigo,Mackenzie,shtcrlcut,$86.00,2024-01-02
+Adame,Sarah,mullet,$70.00,2024-01-02
+Brown,Troy,mullet,$70.00,2024-01-02
+Galarsa,Laila,mullet,$70.00,2024-01-02
+Henry,Alexis,lngcrlcut,$107.00,2024-01-02
+Jankowski,Maegan,medct,$84.00,2024-01-02
+Jankowski,Maegan,acid,$20.00,2024-01-02
+Keogh,Becky,medcrlcut,$98.00,2024-01-02
+Keogh,Becky,acid,$20.00,2024-01-02
+Sheehan-DArrigo,Mackenzie,shtcrlcut,$86.00,2024-01-02
+Gubbins,Olivia,lngcrlcut,$0.00,2024-01-04
+Gubbins,Olivia,lngcrlcut,$107.00,2024-01-04
+Johnston,Erik,mullet,$70.00,2024-01-04
+Lacy,Jessica,lngcut,$98.00,2024-01-04
+Lacy,Jessica,acid,$20.00,2024-01-04
+Miller,Declan,crlymullet,$73.00,2024-01-04
+Sanders,Noah,crlymullet,$73.00,2024-01-04
+Sanders,Noah,acid,$20.00,2024-01-04
+Smith,Adrian,mullet,$70.00,2024-01-04
+Tuneff,Dan,crlymullet,$73.00,2024-01-04
+Webb,Jaye,mullet,$56.00,2024-01-04
+Welch,Sam,medct,$84.00,2024-01-04
+Gubbins,Olivia,lngcrlcut,$0.00,2024-01-04
+Gubbins,Olivia,lngcrlcut,$107.00,2024-01-04
+Johnston,Erik,mullet,$70.00,2024-01-04
+Lacy,Jessica,lngcut,$98.00,2024-01-04
+Lacy,Jessica,acid,$20.00,2024-01-04
+Miller,Declan,crlymullet,$73.00,2024-01-04
+Sanders,Noah,crlymullet,$73.00,2024-01-04
+Sanders,Noah,acid,$20.00,2024-01-04
+Smith,Adrian,mullet,$70.00,2024-01-04
+Tuneff,Dan,crlymullet,$73.00,2024-01-04
+Webb,Jaye,mullet,$56.00,2024-01-04
+Welch,Sam,medct,$84.00,2024-01-04
+Bernardino,Ashley,lngcrlcut,$107.00,2024-01-06
+Bernardino,Ashley,acid,$20.00,2024-01-06
+Colon,Aubrie,shtcrlcut,$66.00,2024-01-06
+Fraticelli,Robby,crlymullet,$73.00,2024-01-06
+Legg,Madison,lngcut,$98.00,2024-01-06
+Lemke,Julia,lngcrlcut,$107.00,2024-01-06
+Marshall,Jordan,lngcrlcut,$107.00,2024-01-06
+Marshall,Jordan,acid,$0.00,2024-01-06
+McConnell,Spencer,shtcrlcut,$86.00,2024-01-06
+McConnell,Spencer,acid,$20.00,2024-01-06
+Riddle,Lauren,lngcrlcut,$107.00,2024-01-06
+Riddle,Lauren,acid,$20.00,2024-01-06
+West,Ethan,mulllet,$70.00,2024-01-06
+A,Amir,shtcrlcut,$86.00,2024-01-08
+Carpenter,Kaylee,lngcrlcut,$107.00,2024-01-08
+Carpenter,Kaylee,cut4,$88.00,2024-01-08
+Foster,katelynn,crlymullet,$73.00,2024-01-08
+Herendeen,nathan,mullet,$70.00,2024-01-08
+jackson,cristen,crlymullet,$73.00,2024-01-08
+jackson,cristen,acid,$20.00,2024-01-08
+lingan,david cody,mullet,$70.00,2024-01-08
+McClumpha,Emily,lngcrlcut,$107.00,2024-01-08
+McClumpha,Emily,acid,$20.00,2024-01-08
+Merring,Francis,mullet,$70.00,2024-01-08
+Merring,Francis,acid,$20.00,2024-01-08
+Orlando,Sarah,lngcut,$98.00,2024-01-08
+Orlando,Sarah,acid,$20.00,2024-01-08
+Price,Devon,lngcrlcut,$107.00,2024-01-08
+Price,Devon,acid,$20.00,2024-01-08
+Alremeithi,Ali,crlymullet,$73.00,2024-01-09
+Alremeithi,Ali,acid,$20.00,2024-01-09
+Conley,Molly,medcrlcut,$98.00,2024-01-09
+Conley,Molly,acid,$20.00,2024-01-09
+Fisher,Dakota,mullet,$70.00,2024-01-09
+Priest,Lex,bt,$20.00,2024-01-09
+Rosenbaum,nyle,mullet,$70.00,2024-01-09
+stinson,forest,medcrlcut,$64.00,2024-01-09
+strother,joe,shtcrlcut,$86.00,2024-01-09
+vucelic,mila,lngcrlcut,$107.00,2024-01-09
+vucelic,mila,acid,$20.00,2024-01-09
+wolfe,leilani,medcrlcut,$98.00,2024-01-09
+wolfe,leilani,acid,$20.00,2024-01-09
+Doner,Emily,lngcrlcut,$107.00,2024-01-11
+Gelsone,Ted,mullet,$70.00,2024-01-11
+Gelsone,Ted,acid,$20.00,2024-01-11
+Hay,Brendan,crlymullet,$73.00,2024-01-11
+Maxwell,Aspen,medcrlcut,$98.00,2024-01-11
+Maxwell,Aspen,mullet,$0.00,2024-01-11
+Rizik,anna,mullet,$70.00,2024-01-11
+Rowe,Gregory,crlymullet,$73.00,2024-01-11
+Rowe,Gregory,acid,$20.00,2024-01-11
+Santos,Jake,mullet,$70.00,2024-01-11
+Sheltz-Kempf,Sydney,lngcrlcut,$107.00,2024-01-11
+Sheltz-Kempf,Sydney,acid,$20.00,2024-01-11
+Torres,Angelica,medcrlcut,$98.00,2024-01-11
+Torres,Angelica,acid,$20.00,2024-01-11
+Travis,Katie,medct,$84.00,2024-01-11
+Zalewski,henry,crlycut,$73.00,2024-01-11
+Alhammadi,Abrar,medcrlcut,$98.00,2024-01-12
+Alhammadi,Abrar,acid,$0.00,2024-01-12
+Bartrem,william,mullet,$70.00,2024-01-12
+Bartrem,william,acid,$20.00,2024-01-12
+loving,matt,mullet,$50.00,2024-01-12
+pancy,tommy,mullet,$70.00,2024-01-12
+tarasenko,travis,mullet,$70.00,2024-01-12
+wright,Maggie,lngcrlcut,$107.00,2024-01-12
+wright,Maggie,acid,$20.00,2024-01-12
+chambers,kailee,medcrlcut,$98.00,2024-01-13
+chambers,kailee,acid,$0.00,2024-01-13
+hall,cannon,acid,$20.00,2024-01-13
+hall,cannon,medcrlcut,$98.00,2024-01-13
+hartsuss,jayden,medcrlcut,$98.00,2024-01-13
+hartsuss,jayden,acid,$0.00,2024-01-13
+hunt,emma,medct,$64.00,2024-01-13
+munerlyn,kindra,medcrlcut,$98.00,2024-01-13
+munerlyn,kindra,acid,$0.00,2024-01-13
+munerlyn,kindra,shtcrlcut,$0.00,2024-01-13
+muzquiz,natalia,lngcrlcut,$85.60,2024-01-13
+muzquiz,natalia,acid,$16.00,2024-01-13
+weiss,devin,crlymullet,$73.00,2024-01-13
+becks,nikita,lngcrlcut,$87.00,2024-01-15
+becks,nikita,acid,$20.00,2024-01-15
+carnevale,madison,mullet,$70.00,2024-01-15
+carpenter,debra,crlymullet,$73.00,2024-01-15
+carpenter,debra,acid,$20.00,2024-01-15
+cole,derek,mullet,$70.00,2024-01-15
+flannigan,miranda,mullet,$70.00,2024-01-15
+jackson,anna,bt,$20.00,2024-01-15
+mcdonald,carsen,mecrlcut,$98.00,2024-01-15
+mcdonald,carsen,acid,$20.00,2024-01-15
+mensonides,kelsea,lngcrlcut,$107.00,2024-01-15
+mensonides,kelsea,acid,$20.00,2024-01-15
+sowulewski,ryan,crlymullet,$73.00,2024-01-15
+stoddard,chloe,Shrtcut,$36.50,2024-01-15
+adamo,willa,lngcut,$98.00,2024-01-16
+adamo,willa,acid,$20.00,2024-01-16
+anderson,ashley,lngcut,$70.00,2024-01-16
+carpenter,debra,acid,$20.00,2024-01-16
+carrier,natasha,shrtcut,$73.00,2024-01-16
+covarrubias-flores,joes,crlymullet,$73.00,2024-01-16
+covarrubias-flores,joes,acid,$20.00,2024-01-16
+flemming,amelia,lngcut,$98.00,2024-01-16
+flemming,amelia,acid,$20.00,2024-01-16
+hanlon,kelly,mullet,$70.00,2024-01-16
+lopez,yazmin,lngcrlcut,$107.00,2024-01-16
+lopez,yazmin,acid,$20.00,2024-01-16
+richey,lisa,medct,$84.00,2024-01-16
+ruiz,demerie,medct,$42.00,2024-01-16
+barnum,phoenix,mullet,$70.00,2024-01-18
+cooley,adrienne,lngcrlcut,$107.00,2024-01-18
+cooley,adrienne,acid,$20.00,2024-01-18
+daniels,logan,shtcrlcut,$86.00,2024-01-18
+florian,jason,mullet,$70.00,2024-01-18
+freund,maddie,lngcrlcut,$107.00,2024-01-18
+freund,maddie,acid,$20.00,2024-01-18
+grodsky,gabriella,lngcrlcut,$107.00,2024-01-18
+grodsky,gabriella,acid,$20.00,2024-01-18
+longanbach,marlys,medcrlcut,$98.00,2024-01-18
+miller,ronnie,lngcrlcut,$107.00,2024-01-18
+miller,ronnie,acid,$20.00,2024-01-18
+nickels,calli,lngcut,$98.00,2024-01-18
+schermesser,logan,lngcrlcut,$107.00,2024-01-18
+schermesser,logan,acid,$20.00,2024-01-18
+stoddard,chloe,shrtcut,$73.00,2024-01-18
+Strong,Bonnie,shtcrlcut,$86.00,2024-01-18
+Strong,Bonnie,acid,$20.00,2024-01-18
+syrocki,Nichole,crlymullet,$73.00,2024-01-18
+whipple,stacy,lngcurlcut,$107.00,2024-01-18
+canning,breanne,lngcrlcut,$87.00,2024-01-19
+ford,calisha,medcrlcut,$98.00,2024-01-19
+ford,calisha,acid,$20.00,2024-01-19
+lingan,David Cody,adj,$0.00,2024-01-19
+nelson,benjamin,lngcut,$88.20,2024-01-19
+phelps,annie,crlymullet,$73.00,2024-01-19
+seelye,aurora,lngcut,$98.00,2024-01-19
+turpin,kayla,sbd,$36.00,2024-01-19
+VanGordon,Paige,crlymullet,$73.00,2024-01-19
+VanGordon,Paige,acid,$20.00,2024-01-19
+weiss,logan,shtcrlcut,$86.00,2024-01-19
+westrick,lachlan,medct,$84.00,2024-01-19
+westrick,lachlan,acid,$20.00,2024-01-19
+Burnham,Jess,mullet,$70.00,2024-01-20
+Burnham,Jess,acid,$20.00,2024-01-20
+Hooper,Shelby,chldmlt,$50.00,2024-01-20
+Jones,Asia,medcrlcut,$98.00,2024-01-20
+Jones,Asia,acid,$20.00,2024-01-20
+MacNeil,Perry,mullet,$70.00,2024-01-20
+Meyers,Emily,mullet,$70.00,2024-01-20
+Meyers,Emily,acid,$20.00,2024-01-20
+Pearce,Liz,medcrlcut,$98.00,2024-01-20
+Pearce,Liz,acid,$20.00,2024-01-20
+Pearce,Maya,medcrlcut,$98.00,2024-01-20
+Philips,Janet,medct,$84.00,2024-01-20
+Robbins,Jami,mullet,$70.00,2024-01-20
+Smith,Tyler,crlymullet,$73.00,2024-01-20
+Burnham,Jess,mullet,$70.00,2024-01-20
+Burnham,Jess,acid,$20.00,2024-01-20
+Hooper,Shelby,chldmlt,$50.00,2024-01-20
+Jones,Asia,medcrlcut,$98.00,2024-01-20
+Jones,Asia,acid,$20.00,2024-01-20
+MacNeil,Perry,mullet,$70.00,2024-01-20
+Meyers,Emily,mullet,$70.00,2024-01-20
+Meyers,Emily,acid,$20.00,2024-01-20
+Pearce,Liz,medcrlcut,$98.00,2024-01-20
+Pearce,Liz,acid,$20.00,2024-01-20
+Pearce,Maya,medcrlcut,$98.00,2024-01-20
+Philips,Janet,medct,$84.00,2024-01-20
+Robbins,Jami,mullet,$70.00,2024-01-20
+Smith,Tyler,crlymullet,$73.00,2024-01-20
+Adame,Sarah,adj,$0.00,2024-01-22
+Anders,Katie,lngcrlcut,$107.00,2024-01-22
+Anders,Katie,acid,$20.00,2024-01-22
+Carlson,Michelle,crtbd,$0.00,2024-01-22
+Carlson,Michelle,lngcrlcut,$107.00,2024-01-22
+Carlson,Michelle,acid,$20.00,2024-01-22
+Carlson,Michelle,cut4,$88.00,2024-01-22
+DaCruz,Katie,medcrlcut,$98.00,2024-01-22
+DaCruz,Katie,cut4,$88.00,2024-01-22
+Dahlgren,Micah,chldmlt,$50.00,2024-01-22
+Elgabri,Nadia,lngcrlcut,$107.00,2024-01-22
+Elgabri,Nadia,acid,$20.00,2024-01-22
+Elgabri,Nadia,detangle,$6.00,2024-01-22
+Frost,Lily,shtcrlcut,$86.00,2024-01-22
+King,Ella,kcc,$60.00,2024-01-22
+King,Ella,acid,$20.00,2024-01-22
+Squair,Sterling,lngcut,$98.00,2024-01-22
+Yeager,Alyssa,lngcut,$98.00,2024-01-22
+Han,Abigail,lngcut,$98.00,2024-01-22
+Hewitt,Sarah,lngcut,$98.00,2024-01-22
+Hewitt,Sarah,acid,$20.00,2024-01-22
+McConnell,Aiden,mullet,$60.00,2024-01-22
+Moldwin,Cody,mullet,$35.00,2024-01-22
+Pontifex,Ava,kcc,$60.00,2024-01-22
+Presley,Blake,crlymullet,$53.00,2024-01-22
+Wallace,Zackary,mullet,$70.00,2024-01-22
+Wallace,Zackary,acid,$20.00,2024-01-22
+Wallace,Zackary,brdt,$20.00,2024-01-22
+Wardlaw,Allison,medcrlcut,$98.00,2024-01-22
+Wardlaw,Allison,acid,$20.00,2024-01-22
+Adame,Sarah,adj,$0.00,2024-01-22
+Anders,Katie,lngcrlcut,$107.00,2024-01-22
+Anders,Katie,acid,$20.00,2024-01-22
+Carlson,Michelle,crtbd,$0.00,2024-01-22
+Carlson,Michelle,lngcrlcut,$107.00,2024-01-22
+Carlson,Michelle,acid,$20.00,2024-01-22
+Carlson,Michelle,cut4,$88.00,2024-01-22
+DaCruz,Katie,medcrlcut,$98.00,2024-01-22
+DaCruz,Katie,cut4,$88.00,2024-01-22
+Dahlgren,Micah,chldmlt,$50.00,2024-01-22
+Elgabri,Nadia,lngcrlcut,$107.00,2024-01-22
+Elgabri,Nadia,acid,$20.00,2024-01-22
+Elgabri,Nadia,detangle,$6.00,2024-01-22
+Frost,Lily,shtcrlcut,$86.00,2024-01-22
+King,Ella,kcc,$60.00,2024-01-22
+King,Ella,acid,$20.00,2024-01-22
+Squair,Sterling,lngcut,$98.00,2024-01-22
+Yeager,Alyssa,lngcut,$98.00,2024-01-22
+Han,Abigail,lngcut,$98.00,2024-01-22
+Hewitt,Sarah,lngcut,$98.00,2024-01-22
+Hewitt,Sarah,acid,$20.00,2024-01-22
+McConnell,Aiden,mullet,$60.00,2024-01-22
+Moldwin,Cody,mullet,$35.00,2024-01-22
+Pontifex,Ava,kcc,$60.00,2024-01-22
+Presley,Blake,crlymullet,$53.00,2024-01-22
+Wallace,Zackary,mullet,$70.00,2024-01-22
+Wallace,Zackary,acid,$20.00,2024-01-22
+Wallace,Zackary,brdt,$20.00,2024-01-22
+Wardlaw,Allison,medcrlcut,$98.00,2024-01-22
+Wardlaw,Allison,acid,$20.00,2024-01-22
+Bosanic,Ben,mullet,$70.00,2024-01-23
+Eddy,Donald,mullet,$70.00,2024-01-23
+Lenor,Fern,bt,$0.00,2024-01-23
+Lenor,Fern,medct,$25.20,2024-01-23
+Lenor,Fern,acid,$6.00,2024-01-23
+Schauer,Lillian,lngcrlcut,$107.00,2024-01-23
+Schauer,Lillian,ctr,$14.00,2024-01-23
+Soule,Tyler,shtcrlcut,$86.00,2024-01-23
+Spitzer,Rebecca,lngcrlcut,$107.00,2024-01-23
+Spitzer,Rebecca,cut4,$88.00,2024-01-23
+Spitzer,Rebecca,acid,$0.00,2024-01-23
+Spitzer,Rebecca,gloss1,$28.00,2024-01-23
+Stevens,Jessica,lngcrlcut,$107.00,2024-01-23
+Stevens,Jessica,acid,$20.00,2024-01-23
+Thurman,Payton,mullet,$70.00,2024-01-23
+Wheeler,Olivia,bt,$20.00,2024-01-23
+Bosanic,Ben,mullet,$70.00,2024-01-23
+Eddy,Donald,mullet,$70.00,2024-01-23
+Lenor,Fern,bt,$0.00,2024-01-23
+Lenor,Fern,medct,$25.20,2024-01-23
+Lenor,Fern,acid,$6.00,2024-01-23
+Schauer,Lillian,lngcrlcut,$107.00,2024-01-23
+Schauer,Lillian,ctr,$14.00,2024-01-23
+Soule,Tyler,shtcrlcut,$86.00,2024-01-23
+Spitzer,Rebecca,lngcrlcut,$107.00,2024-01-23
+Spitzer,Rebecca,cut4,$88.00,2024-01-23
+Spitzer,Rebecca,acid,$0.00,2024-01-23
+Spitzer,Rebecca,gloss1,$28.00,2024-01-23
+Stevens,Jessica,lngcrlcut,$107.00,2024-01-23
+Stevens,Jessica,acid,$20.00,2024-01-23
+Thurman,Payton,mullet,$70.00,2024-01-23
+Wheeler,Olivia,bt,$20.00,2024-01-23
+Campau,Cameron,mullet,$70.00,2024-01-25
+Coady,Megan,lngcut,$98.00,2024-01-25
+Coady,Megan,acid,$20.00,2024-01-25
+Everett,Cole,mullet,$50.00,2024-01-25
+Gogan,Lindsay,lngcut,$98.00,2024-01-25
+Gogan,Lindsay,cut4,$88.00,2024-01-25
+Gogan,Lindsay,gloss1,$28.00,2024-01-25
+Gottschalk,Ricky,medcrlcut,$98.00,2024-01-25
+Gottschalk,Ricky,acid,$20.00,2024-01-25
+Luedtke,Chloe,medcrlcut,$98.00,2024-01-25
+Luedtke,Chloe,acid,$20.00,2024-01-25
+Slough,John,lngcrlcut,$107.00,2024-01-25
+Campau,Cameron,mullet,$70.00,2024-01-25
+Coady,Megan,lngcut,$98.00,2024-01-25
+Coady,Megan,acid,$20.00,2024-01-25
+Everett,Cole,mullet,$50.00,2024-01-25
+Gogan,Lindsay,lngcut,$98.00,2024-01-25
+Gogan,Lindsay,cut4,$88.00,2024-01-25
+Gogan,Lindsay,gloss1,$28.00,2024-01-25
+Gottschalk,Ricky,medcrlcut,$98.00,2024-01-25
+Gottschalk,Ricky,acid,$20.00,2024-01-25
+Luedtke,Chloe,medcrlcut,$98.00,2024-01-25
+Luedtke,Chloe,acid,$20.00,2024-01-25
+Slough,John,lngcrlcut,$107.00,2024-01-25
+Andronic,Olivia,lngcut,$78.40,2024-01-26
+Deering,Lillian,medcrlcut,$98.00,2024-01-26
+Jefferson,Joshua,mullet,$70.00,2024-01-26
+Kravitz,Jordyn,lngcrlcut,$107.00,2024-01-26
+Kravitz,Jordyn,acid,$0.00,2024-01-26
+Mensonides,Jason,crlymullet,$73.00,2024-01-26
+Sample,Alex,medcrlcut,$98.00,2024-01-26
+Sample,Alex,acid,$20.00,2024-01-26
+Shoup,Sonya,medct,$84.00,2024-01-26
+Thomas,Madison,mullet,$70.00,2024-01-26
+Webb,Tommy,mullet,$70.00,2024-01-26
+Webb,Tommy,acid,$20.00,2024-01-26
+Andronic,Olivia,lngcut,$78.40,2024-01-26
+Deering,Lillian,medcrlcut,$98.00,2024-01-26
+Jefferson,Joshua,mullet,$70.00,2024-01-26
+Kravitz,Jordyn,lngcrlcut,$107.00,2024-01-26
+Kravitz,Jordyn,acid,$0.00,2024-01-26
+Mensonides,Jason,crlymullet,$73.00,2024-01-26
+Sample,Alex,medcrlcut,$98.00,2024-01-26
+Sample,Alex,acid,$20.00,2024-01-26
+Shoup,Sonya,medct,$84.00,2024-01-26
+Thomas,Madison,mullet,$70.00,2024-01-26
+Webb,Tommy,mullet,$70.00,2024-01-26
+Webb,Tommy,acid,$20.00,2024-01-26
+Booker,Shawn,mullet,$70.00,2024-01-27
+Bussa,Amanda,shtcrlcut,$86.00,2024-01-27
+Bussa,Amanda,acid,$20.00,2024-01-27
+Dell,Alicia,lngcrlcut,$107.00,2024-01-27
+Greenleaf,Hannah,medcrlcut,$98.00,2024-01-27
+Greenleaf,Hannah,acid,$20.00,2024-01-27
+Grundman,Gannon,shtcrlcut,$86.00,2024-01-27
+Naccareko,Susie,mullet,$70.00,2024-01-27
+Roman,Wrex,medct,$67.20,2024-01-27
+Seymour,Heather,medct,$84.00,2024-01-27
+Seymour,Heather,acid,$20.00,2024-01-27
+Thurmond,Cassidy,lngcut,$98.00,2024-01-27
+Wheeler,Jessica,bt,$25.00,2024-01-27
+Booker,Shawn,mullet,$70.00,2024-01-27
+Bussa,Amanda,shtcrlcut,$86.00,2024-01-27
+Bussa,Amanda,acid,$20.00,2024-01-27
+Dell,Alicia,lngcrlcut,$107.00,2024-01-27
+Greenleaf,Hannah,medcrlcut,$98.00,2024-01-27
+Greenleaf,Hannah,acid,$20.00,2024-01-27
+Grundman,Gannon,shtcrlcut,$86.00,2024-01-27
+Naccareko,Susie,mullet,$70.00,2024-01-27
+Roman,Wrex,medct,$67.20,2024-01-27
+Seymour,Heather,medct,$84.00,2024-01-27
+Seymour,Heather,acid,$20.00,2024-01-27
+Thurmond,Cassidy,lngcut,$98.00,2024-01-27
+Wheeler,Jessica,bt,$25.00,2024-01-27
+Colon,Devyn,fdclipper,$0.00,2024-01-29
+DIsiere,Ariel,lngcut,$98.00,2024-01-29
+Grooters,McKenzie,lngcrlcut,$107.00,2024-01-29
+hernandez,susie,clrcurl,$0.00,2024-01-29
+hernandez,susie,lngcrlcut,$107.00,2024-01-29
+hernandez,susie,cut4,$88.00,2024-01-29
+hernandez,susie,toner2,$36.00,2024-01-29
+mccauley,jasmine,medcrlcut,$98.00,2024-01-29
+mccauley,jasmine,acid,$20.00,2024-01-29
+Nawrocki,Anna,mullet,$70.00,2024-01-29
+Roethele,Brit,mullet,$70.00,2024-01-29
+Schopmeyer,Mia,bt,$20.00,2024-01-29
+Smith,Janet A,mullet,$70.00,2024-01-29
+Broadnax,Briana,lngcrlcut,$107.00,2024-01-30
+Broadnax,Briana,acid,$20.00,2024-01-30
+Haus,miranda,lngcrlcut,$107.00,2024-01-30
+Haus,miranda,acid,$20.00,2024-01-30
+Heuhs,kerry,shtcrlcut,$86.00,2024-01-30
+Heuhs,kerry,mcgb,$44.00,2024-01-30
+kurzyniec,Rebecca,lgcrlcut,$107.00,2024-01-30
+kurzyniec,Rebecca,cut4,$88.00,2024-01-30
+kurzyniec,Rebecca,gloss2,$36.00,2024-01-30
+kurzyniec,Rebecca,acid,$20.00,2024-01-30
+Pine,Angelle,lngcut,$98.00,2024-01-30
+Pine,Angelle,acid,$20.00,2024-01-30
+Pung,Paige,lngcrlcut,$107.00,2024-01-30
+Sherill,Amanda,shtcrlcut,$86.00,2024-01-30
+Sporey,Fredrick,acid,$20.00,2024-01-30
+Sporey,Fredrick,crlymullet,$73.00,2024-01-30
+Warnez,Dana,lngcut,$98.00,2024-01-30
+Edwards,Tracy,medcrlcut,$78.00,2024-02-01
+Edwards,Tracy,acid,$20.00,2024-02-01
+Foster,Chelsea,Mullet,$70.00,2024-02-01
+Harper,Sarah,crlymullet,$73.00,2024-02-01
+Haught,Mylee,lngcrlcut,$107.00,2024-02-01
+Hunter,Nick,crlymullet,$73.00,2024-02-01
+Kissel,Samantha,lngcrlcut,$107.00,2024-02-01
+oppermann,Bryson,mullet,$70.00,2024-02-01
+Plant,Amber,lngcrlcut,$87.00,2024-02-01
+Plant,Amber,acid,$18.00,2024-02-01
+Bonds,Jessica,medcrlcut,$88.00,2024-02-02
+Frank,Spirit,lngcrlcut,$107.00,2024-02-02
+Frank,Spirit,acid,$0.00,2024-02-02
+Grooters,McKenzie,adj,$0.00,2024-02-02
+Hamed,Savanna,lngcrlcut,$107.00,2024-02-02
+Miller,Sarah,lngcut,$98.00,2024-02-02
+Nelson,Meredith,shtcrlcut,$86.00,2024-02-02
+Noelen,Kaylen,lngcrlcut,$107.00,2024-02-02
+Noelen,Kaylen,acid,$20.00,2024-02-02
+Spender,claire,shrtcut,$73.00,2024-02-02
+Vangelov,Mariana,lngcut,$98.00,2024-02-02
+Vangelov,Mariana,acid,$20.00,2024-02-02
+Carman,Laura,Crlymullet,$73.00,2024-02-03
+Childress,Bub,mullet,$70.00,2024-02-03
+DeSana,Joe,mullet,$70.00,2024-02-03
+DeSana,Joe,brdt,$20.00,2024-02-03
+Encelewski,Mitch,shrtcut,$73.00,2024-02-03
+gauthier,alyssa,lngcrlcut,$107.00,2024-02-03
+gauthier,alyssa,acid,$20.00,2024-02-03
+hall,Cameron,mullet,$70.00,2024-02-03
+Johnson,michelle,chldmlt,$50.00,2024-02-03
+LaFave,Prokey,mullet,$70.00,2024-02-03
+LaFave,Prokey,acid,$20.00,2024-02-03
+Okeefe,Finn,shtcrlcut,$86.00,2024-02-03
+Reed,Noah,mullet,$70.00,2024-02-03
+Carlson,michelle,crtbd,$109.00,2024-02-05
+Carlson,michelle,acid,$20.00,2024-02-05
+Compton,Hannah,medct,$84.00,2024-02-05
+Compton,Hannah,acid,$20.00,2024-02-05
+Klochack,peyton,mullet,$70.00,2024-02-05
+Klochack,peyton,acid,$20.00,2024-02-05
+liu,abigail,bt,$0.00,2024-02-05
+liu,abigail,lngcrlcut,$107.00,2024-02-05
+liu,abigail,acid,$20.00,2024-02-05
+mcBride,cody,mullet,$70.00,2024-02-05
+mcBride,cody,acid,$0.00,2024-02-05
+mickelson,hope,medcrlcut,$98.00,2024-02-05
+mickelson,hope,acid,$20.00,2024-02-05
+moldwin,cody,mullet,$0.00,2024-02-05
+moldwin,cody,shrtcut,$73.00,2024-02-05
+wisdom,hannah,medct,$84.00,2024-02-05
+House,Becky,lngcut,$98.00,2024-02-06
+Kramer,Sydney,lngcut,$98.00,2024-02-06
+Moon,Madison,mullet,$70.00,2024-02-06
+Rhodes,Amanda,lngcut,$98.00,2024-02-06
+Spence,Cameron,mullet,$70.00,2024-02-06
+Spence,Cameron,brdt,$20.00,2024-02-06
+Spence,Cameron,acid,$20.00,2024-02-06
+Thurman,Heath,shtcrlcut,$86.00,2024-02-06
+Webb,Jaye,mullet,$70.00,2024-02-06
+Van Lear,Libby,lngcrlcut,$53.50,2024-02-06
+House,Becky,lngcut,$98.00,2024-02-06
+Kramer,Sydney,lngcut,$98.00,2024-02-06
+Moon,Madison,mullet,$70.00,2024-02-06
+Rhodes,Amanda,lngcut,$98.00,2024-02-06
+Spence,Cameron,mullet,$70.00,2024-02-06
+Spence,Cameron,brdt,$20.00,2024-02-06
+Spence,Cameron,acid,$20.00,2024-02-06
+Thurman,Heath,shtcrlcut,$86.00,2024-02-06
+Webb,Jaye,mullet,$70.00,2024-02-06
+Van Lear,Libby,lngcrlcut,$53.50,2024-02-06
+Butcher,Heidi,shrtcut,$73.00,2024-02-08
+Downs,Zarya,lngcut,$98.00,2024-02-08
+Downs,Zarya,acid,$20.00,2024-02-08
+Downs,Zarya,mullet,$0.00,2024-02-08
+George,Jessica,acid,$20.00,2024-02-08
+George,Jessica,lngcrlcut,$87.00,2024-02-08
+Hall,Lindsay,acid,$20.00,2024-02-08
+Hall,Lindsay,medcrlcut,$98.00,2024-02-08
+Harrol,Ozzy,chldmlt,$50.00,2024-02-08
+Humi,Kenzie,medct,$84.00,2024-02-08
+Johnson,Josh,acid,$20.00,2024-02-08
+Johnson,Josh,lngcut,$98.00,2024-02-08
+Johnson,Josh,medct,$0.00,2024-02-08
+Loving,Matt,mullet,$70.00,2024-02-08
+Nienhuis,Arie,crlymullet,$73.00,2024-02-08
+Richard,Clover,acid,$20.00,2024-02-08
+Richard,Clover,crlymullet,$73.00,2024-02-08
+Rock,James,brdt,$20.00,2024-02-08
+Rock,James,mullet,$70.00,2024-02-08
+Smith,Adrian,crlymullet,$73.00,2024-02-08
+Smith,Adrian,mullet,$0.00,2024-02-08
+Butcher,Heidi,shrtcut,$73.00,2024-02-08
+Downs,Zarya,lngcut,$98.00,2024-02-08
+Downs,Zarya,acid,$20.00,2024-02-08
+Downs,Zarya,mullet,$0.00,2024-02-08
+George,Jessica,acid,$20.00,2024-02-08
+George,Jessica,lngcrlcut,$87.00,2024-02-08
+Hall,Lindsay,acid,$20.00,2024-02-08
+Hall,Lindsay,medcrlcut,$98.00,2024-02-08
+Harrol,Ozzy,chldmlt,$50.00,2024-02-08
+Humi,Kenzie,medct,$84.00,2024-02-08
+Johnson,Josh,acid,$20.00,2024-02-08
+Johnson,Josh,lngcut,$98.00,2024-02-08
+Johnson,Josh,medct,$0.00,2024-02-08
+Loving,Matt,mullet,$70.00,2024-02-08
+Nienhuis,Arie,crlymullet,$73.00,2024-02-08
+Richard,Clover,acid,$20.00,2024-02-08
+Richard,Clover,crlymullet,$73.00,2024-02-08
+Rock,James,brdt,$20.00,2024-02-08
+Rock,James,mullet,$70.00,2024-02-08
+Smith,Adrian,crlymullet,$73.00,2024-02-08
+Smith,Adrian,mullet,$0.00,2024-02-08
+Brandon,Shannon,mullet,$70.00,2024-02-09
+Feldpausch,Desiree,shtcrlcut,$86.00,2024-02-09
+Gardner,Colin,mullet,$70.00,2024-02-09
+Ivy,Jessika,acid,$20.00,2024-02-09
+Ivy,Jessika,lngcrlcut,$107.00,2024-02-09
+Ivy,Jessika,sbd,$36.00,2024-02-09
+Johnson,Elizabeth,shrtcut,$73.00,2024-02-09
+Lopez,Shannon,medcrlcut,$98.00,2024-02-09
+Rowe,Gregory,crly,$73.00,2024-02-09
+Rowe,Gregory,acid,$20.00,2024-02-09
+Rowe,Gregory,brdt,$20.00,2024-02-09
+Weston,Olive,lngcrlcut,$107.00,2024-02-09
+Weston,Olive,acid,$20.00,2024-02-09
+Brandon,Shannon,mullet,$70.00,2024-02-09
+Feldpausch,Desiree,shtcrlcut,$86.00,2024-02-09
+Gardner,Colin,mullet,$70.00,2024-02-09
+Ivy,Jessika,acid,$20.00,2024-02-09
+Ivy,Jessika,lngcrlcut,$107.00,2024-02-09
+Ivy,Jessika,sbd,$36.00,2024-02-09
+Johnson,Elizabeth,shrtcut,$73.00,2024-02-09
+Lopez,Shannon,medcrlcut,$98.00,2024-02-09
+Rowe,Gregory,crly,$73.00,2024-02-09
+Rowe,Gregory,acid,$20.00,2024-02-09
+Rowe,Gregory,brdt,$20.00,2024-02-09
+Weston,Olive,lngcrlcut,$107.00,2024-02-09
+Weston,Olive,acid,$20.00,2024-02-09
+Bartrem,William,mullet,$70.00,2024-02-10
+Bodea,Ani,lngcrlcut,$107.00,2024-02-10
+Bodea,Ani,acid,$20.00,2024-02-10
+Dodge,Deborah,lngcut,$98.00,2024-02-10
+Dodge,Deborah,acid,$20.00,2024-02-10
+Hunt,Austin,shrtcut,$73.00,2024-02-10
+Johnson,JaAliyah,lngcrlcut,$107.00,2024-02-10
+Johnson,JaAliyah,acid,$20.00,2024-02-10
+Luther,Kathleen,bt,$20.00,2024-02-10
+Washington,Naia,lngcrlcut,$87.00,2024-02-10
+Washington,Naia,acid,$20.00,2024-02-10
+Wilder,KaLyn,lngcrlcut,$107.00,2024-02-10
+Wilder,KaLyn,acid,$20.00,2024-02-10
+Bartrem,William,mullet,$70.00,2024-02-10
+Bodea,Ani,lngcrlcut,$107.00,2024-02-10
+Bodea,Ani,acid,$20.00,2024-02-10
+Dodge,Deborah,lngcut,$98.00,2024-02-10
+Dodge,Deborah,acid,$20.00,2024-02-10
+Hunt,Austin,shrtcut,$73.00,2024-02-10
+Johnson,JaAliyah,lngcrlcut,$107.00,2024-02-10
+Johnson,JaAliyah,acid,$20.00,2024-02-10
+Luther,Kathleen,bt,$20.00,2024-02-10
+Washington,Naia,lngcrlcut,$87.00,2024-02-10
+Washington,Naia,acid,$20.00,2024-02-10
+Wilder,KaLyn,lngcrlcut,$107.00,2024-02-10
+Wilder,KaLyn,acid,$20.00,2024-02-10
+Beals,Kristen,lngcrlcut,$107.00,2024-02-12
+Beals,Kristen,acid,$20.00,2024-02-12
+Callanan,Renae,medct,$84.00,2024-02-12
+Case,Aidan,mullet,$70.00,2024-02-12
+Connelly,LeeAnn,shtcrlcut,$86.00,2024-02-12
+Connelly,LeeAnn,acid,$20.00,2024-02-12
+DeHaan,kyle,mullet,$70.00,2024-02-12
+DeHaan,kyle,acid,$20.00,2024-02-12
+Humes,Jackson,Shtcrlcut,$86.00,2024-02-12
+Jurasek,Laura,medcrlcut,$98.00,2024-02-12
+Randall,Jessica,medct,$84.00,2024-02-12
+Tarasenko,Travis,mullet,$70.00,2024-02-12
+Abood,Rhonda,lngcut,$98.00,2024-02-13
+Brown,Troy,mullet,$70.00,2024-02-13
+Brzuchalski,Ava,lngcut,$98.00,2024-02-13
+Huberty,Sean,mullet,$70.00,2024-02-13
+Lyon,TIffani,medcrlcut,$98.00,2024-02-13
+Lyon,TIffani,acid,$20.00,2024-02-13
+Osann,Savina,mullet,$70.00,2024-02-13
+Pineda,Heidi,lngcrlcut,$107.00,2024-02-13
+Smith,Brenden,mullet,$70.00,2024-02-13
+Smith,Brenden,acid,$20.00,2024-02-13
+Carrier,Natahsa,shrtcut,$0.00,2024-02-15
+Carrier,Natahsa,mullet,$70.00,2024-02-15
+Cousins,Shannon,shrtcut,$50.00,2024-02-15
+Finney,Braeden,lngcrlcut,$107.00,2024-02-15
+Finney,Braeden,acid,$20.00,2024-02-15
+Florian,Jason,mullet,$70.00,2024-02-15
+Florian,Jason,brdt,$20.00,2024-02-15
+Hall,Fae,medcrlcut,$98.00,2024-02-15
+Hurni,Sam,medcrlcut,$98.00,2024-02-15
+Hurni,Sam,acid,$20.00,2024-02-15
+Levinsohn,Reuben,shtcrlcut,$86.00,2024-02-15
+Nakfoor,Joy,shtcrlcut,$86.00,2024-02-15
+Ramirez,Andrew,mullet,$70.00,2024-02-15
+Siada,Kareem,medcrlut,$98.00,2024-02-15
+Thomas,Kalese,mullet,$70.00,2024-02-15
+Brasseur,Aime,shtcrlcut,$86.00,2024-02-16
+Galayda,Grace,lngcut,$98.00,2024-02-16
+Galayda,Grace,acid,$0.00,2024-02-16
+Garcia,Nautiqa,lngcrlcut,$107.00,2024-02-16
+Garcia,Nautiqa,acid,$20.00,2024-02-16
+Hazel,Neil,mullet,$70.00,2024-02-16
+Holmes,Briana,medct,$84.00,2024-02-16
+Holmes,Briana,cut4,$88.00,2024-02-16
+Holmes,Briana,acid,$20.00,2024-02-16
+Mehregan,Abby,lngcrlcut,$107.00,2024-02-16
+Mehregan,Abby,acid,$20.00,2024-02-16
+Ney,Nic,chldmlt,$50.00,2024-02-16
+Pontifex,Katie,lngcut,$98.00,2024-02-16
+Pontifex,Katie,acid,$20.00,2024-02-16
+Winowiecki,Harken,chldmlt,$50.00,2024-02-16
+Arnold,Mariah,medcrlcut,$98.00,2024-02-17
+Arnold,Mariah,acid,$20.00,2024-02-17
+barron,Rachael,lngcut,$98.00,2024-02-17
+bowe,Jillian,mullet,$70.00,2024-02-17
+Cattell,Steve,crlymullet,$73.00,2024-02-17
+Chevis,Alli,shrtcut,$73.00,2024-02-17
+Reinhardt,Claire,lngcut,$98.00,2024-02-17
+Rohlman,Keith,cut4,$88.00,2024-02-17
+Rohlman,Keith,lngcut,$98.00,2024-02-17
+Rohlman,Keith,acid,$20.00,2024-02-17
+Saunders,Olivia,Lngcut,$98.00,2024-02-17
+Saunders,Olivia,acid,$20.00,2024-02-17
+Smith,tyler,crlymullet,$73.00,2024-02-17
+Smith,tyler,brdt,$20.00,2024-02-17
+Smith,tyler,acid,$20.00,2024-02-17
+Vess,Kaitlyn,mullet,$70.00,2024-02-17
+Clement,Marissa,lngcrlcut,$107.00,2024-02-19
+Fullerton,Olivia,kcc,$60.00,2024-02-19
+Fullerton,Olivia,acid,$20.00,2024-02-19
+Herendeen,Nathan,crlymullet,$73.00,2024-02-19
+Koetsier,Taylor,lngcut,$49.00,2024-02-19
+Ney,Nic,mullet,$70.00,2024-02-19
+Odom,Christopher,mullet,$70.00,2024-02-19
+Solis,Julian,medcrlcut,$98.00,2024-02-19
+Solis,Julian,acid,$20.00,2024-02-19
+Stabler,Jacob,crlymullet,$73.00,2024-02-19
+Wallington,Brittney,mullet,$70.00,2024-02-19
+Covarrubias-Flores,Jose,crlymullet,$73.00,2024-02-20
+Garcia,Karin,lngcrlcut,$107.00,2024-02-20
+Garcia,Karin,acid,$20.00,2024-02-20
+Perez,Carlos,mullet,$70.00,2024-02-20
+Stanton,Gary,mullet,$70.00,2024-02-20
+Covarrubias-Flores,Jose,crlymullet,$73.00,2024-02-20
+Garcia,Karin,lngcrlcut,$107.00,2024-02-20
+Garcia,Karin,acid,$20.00,2024-02-20
+Perez,Carlos,mullet,$70.00,2024-02-20
+Stanton,Gary,mullet,$70.00,2024-02-20
+Baugher,Bree,lngcut,$98.00,2024-02-24
+Cole,Derek,mullet,$70.00,2024-02-24
+Falleti,Dean,crlymullet,$73.00,2024-02-24
+Falleti,Dean,acid,$20.00,2024-02-24
+McAllister,Jayden,medcrlcut,$98.00,2024-02-24
+McAllister,Jaylxon,medcrlcut,$98.00,2024-02-24
+Potter,Lucy,lngcut,$98.00,2024-02-24
+Potter,Lucy,acid,$20.00,2024-02-24
+Treger,Milo,shtcrlcut,$86.00,2024-02-24
+Valvano,Beth,lngcrlcut,$107.00,2024-02-24
+Baugher,Bree,lngcut,$98.00,2024-02-24
+Cole,Derek,mullet,$70.00,2024-02-24
+Falleti,Dean,crlymullet,$73.00,2024-02-24
+Falleti,Dean,acid,$20.00,2024-02-24
+McAllister,Jayden,medcrlcut,$98.00,2024-02-24
+McAllister,Jaylxon,medcrlcut,$98.00,2024-02-24
+Potter,Lucy,lngcut,$98.00,2024-02-24
+Potter,Lucy,acid,$20.00,2024-02-24
+Treger,Milo,shtcrlcut,$86.00,2024-02-24
+Valvano,Beth,lngcrlcut,$107.00,2024-02-24
+Blanchard,Anne,lngcrlcut,$107.00,2024-02-26
+Blanchard,Anne,acid,$20.00,2024-02-26
+Dahlgren,Sabrina,medcrlcut,$98.00,2024-02-26
+Dahlgren,Sabrina,acid,$20.00,2024-02-26
+Gottschalk,Ricky,medcrlcut,$98.00,2024-02-26
+Greenhoe,Lauden,medcrlcut,$98.00,2024-02-26
+Heveran,Frank,lngcut,$98.00,2024-02-26
+Rivera,Isaac,medcrlcut,$98.00,2024-02-26
+Rivera,Isaac,acid,$20.00,2024-02-26
+Schultz,Max,lngcut,$98.00,2024-02-26
+Schultz,Max,cut4,$50.00,2024-02-26
+Sehl,Lana,medct,$84.00,2024-02-26
+Weiss,Devin,crlymullet,$73.00,2024-02-26
+Weiss,Devin,acid,$20.00,2024-02-26
+Weiss,Logan,shtcrlcut,$86.00,2024-02-26
+Blanchard,Anne,lngcrlcut,$107.00,2024-02-26
+Blanchard,Anne,acid,$20.00,2024-02-26
+Dahlgren,Sabrina,medcrlcut,$98.00,2024-02-26
+Dahlgren,Sabrina,acid,$20.00,2024-02-26
+Gottschalk,Ricky,medcrlcut,$98.00,2024-02-26
+Greenhoe,Lauden,medcrlcut,$98.00,2024-02-26
+Heveran,Frank,lngcut,$98.00,2024-02-26
+Rivera,Isaac,medcrlcut,$98.00,2024-02-26
+Rivera,Isaac,acid,$20.00,2024-02-26
+Schultz,Max,lngcut,$98.00,2024-02-26
+Schultz,Max,cut4,$50.00,2024-02-26
+Sehl,Lana,medct,$84.00,2024-02-26
+Weiss,Devin,crlymullet,$73.00,2024-02-26
+Weiss,Devin,acid,$20.00,2024-02-26
+Weiss,Logan,shtcrlcut,$86.00,2024-02-26
+DeKatch,Amanda,Medcrlcut,$98.00,2024-02-27
+Fouks,Kathryn,lngcrlcut,$107.00,2024-02-27
+Gillie,Allison,medcrlcut,$98.00,2024-02-27
+Gubbins,Olivia,crlbd,$0.00,2024-02-27
+Gubbins,Olivia,cut4,$88.00,2024-02-27
+Gubbins,Olivia,gloss1,$28.00,2024-02-27
+Gubbins,Olivia,acid,$20.00,2024-02-27
+Gubbins,Olivia,bt,$50.00,2024-02-27
+Hanlon,Kelly,mullet,$70.00,2024-02-27
+Mckimom,Max,shtcrlcut,$86.00,2024-02-27
+Middlin,Rhonda,medcrlcut,$98.00,2024-02-27
+Middlin,Rhonda,cut4,$88.00,2024-02-27
+Richey,Lisa,medct,$84.00,2024-02-27
+Schafer,Amy,lngcut,$98.00,2024-02-27
+DeKatch,Amanda,Medcrlcut,$98.00,2024-02-27
+Fouks,Kathryn,lngcrlcut,$107.00,2024-02-27
+Gillie,Allison,medcrlcut,$98.00,2024-02-27
+Gubbins,Olivia,crlbd,$0.00,2024-02-27
+Gubbins,Olivia,cut4,$88.00,2024-02-27
+Gubbins,Olivia,gloss1,$28.00,2024-02-27
+Gubbins,Olivia,acid,$20.00,2024-02-27
+Gubbins,Olivia,bt,$50.00,2024-02-27
+Hanlon,Kelly,mullet,$70.00,2024-02-27
+Mckimom,Max,shtcrlcut,$86.00,2024-02-27
+Middlin,Rhonda,medcrlcut,$98.00,2024-02-27
+Middlin,Rhonda,cut4,$88.00,2024-02-27
+Richey,Lisa,medct,$84.00,2024-02-27
+Schafer,Amy,lngcut,$98.00,2024-02-27
+Brame,Bailey,medcrlcut,$98.00,2024-02-29
+Bravo,Stephany,lngcrlcut,$107.00,2024-02-29
+Bravo,Stephany,acid,$20.00,2024-02-29
+Gubanche,Gabrielle,shrtcut,$73.00,2024-02-29
+Kruger,Jessica,mullet,$70.00,2024-02-29
+Pansy,Tommy,mullet,$70.00,2024-02-29
+Perry,Olivia,acid,$20.00,2024-02-29
+Perry,Olivia,medcrlcut,$98.00,2024-02-29
+Peterson,Kathy,medcrlcut,$78.00,2024-02-29
+Shook,Caleb,mullet,$70.00,2024-02-29
+Strong,Bonnie,shtcrlcut,$86.00,2024-02-29
+Strong,Bonnie,acid,$20.00,2024-02-29
+Travis,Katie,medct,$84.00,2024-02-29
+Zavala-Kelly,Carmen,acid,$20.00,2024-02-29
+Zavala-Kelly,Carmen,medcrlcut,$98.00,2024-02-29
+Brame,Bailey,medcrlcut,$98.00,2024-02-29
+Bravo,Stephany,lngcrlcut,$107.00,2024-02-29
+Bravo,Stephany,acid,$20.00,2024-02-29
+Gubanche,Gabrielle,shrtcut,$73.00,2024-02-29
+Kruger,Jessica,mullet,$70.00,2024-02-29
+Pansy,Tommy,mullet,$70.00,2024-02-29
+Perry,Olivia,acid,$20.00,2024-02-29
+Perry,Olivia,medcrlcut,$98.00,2024-02-29
+Peterson,Kathy,medcrlcut,$78.00,2024-02-29
+Shook,Caleb,mullet,$70.00,2024-02-29
+Strong,Bonnie,shtcrlcut,$86.00,2024-02-29
+Strong,Bonnie,acid,$20.00,2024-02-29
+Travis,Katie,medct,$84.00,2024-02-29
+Zavala-Kelly,Carmen,acid,$20.00,2024-02-29
+Zavala-Kelly,Carmen,medcrlcut,$98.00,2024-02-29
+Bridenbaker,Carl,mullet,$70.00,2024-03-01
+Fraticelli,Robby,crlymullet,$73.00,2024-03-01
+Humphries,Dee,crlbd,$0.00,2024-03-01
+Humphries,Dee,cut4,$88.00,2024-03-01
+Humphries,Dee,sbd,$36.00,2024-03-01
+Humphries,Dee,gloss1,$28.00,2024-03-01
+Oppermann,Bryson,mullet,$70.00,2024-03-01
+Suydam,Kyleigh,lngcut,$98.00,2024-03-01
+Suydam,Kyleigh,acid,$20.00,2024-03-01
+Tuneff,Dan,crlymullet,$73.00,2024-03-01
+Bridenbaker,Carl,mullet,$70.00,2024-03-01
+Fraticelli,Robby,crlymullet,$73.00,2024-03-01
+Humphries,Dee,crlbd,$0.00,2024-03-01
+Humphries,Dee,cut4,$88.00,2024-03-01
+Humphries,Dee,sbd,$36.00,2024-03-01
+Humphries,Dee,gloss1,$28.00,2024-03-01
+Oppermann,Bryson,mullet,$70.00,2024-03-01
+Suydam,Kyleigh,lngcut,$98.00,2024-03-01
+Suydam,Kyleigh,acid,$20.00,2024-03-01
+Tuneff,Dan,crlymullet,$73.00,2024-03-01
+Bolton,Hunter,crlymullet,$73.00,2024-03-02
+Bolton,Hunter,brdt,$0.00,2024-03-02
+DeYoung,Kyle,shrtcut,$73.00,2024-03-02
+Fisher,Dakota,mullet,$70.00,2024-03-02
+Fisher,Dakota,acid,$20.00,2024-03-02
+Fox,Carrie,lngcrlcut,$107.00,2024-03-02
+Hanouti,Dana,lngcrlcut,$107.00,2024-03-02
+Legg,Madi,lngcut,$98.00,2024-03-02
+Petermann,Saige,lngcrlcut,$107.00,2024-03-02
+Squair,Sterling,lngcut,$98.00,2024-03-02
+Strom,Emily,lngcut,$98.00,2024-03-02
+Weare,Jessica,lngcrlcut,$107.00,2024-03-02
+Weare,Jessica,acid,$20.00,2024-03-02
+Bolton,Hunter,crlymullet,$73.00,2024-03-02
+Bolton,Hunter,brdt,$0.00,2024-03-02
+DeYoung,Kyle,shrtcut,$73.00,2024-03-02
+Fisher,Dakota,mullet,$70.00,2024-03-02
+Fisher,Dakota,acid,$20.00,2024-03-02
+Fox,Carrie,lngcrlcut,$107.00,2024-03-02
+Hanouti,Dana,lngcrlcut,$107.00,2024-03-02
+Legg,Madi,lngcut,$98.00,2024-03-02
+Petermann,Saige,lngcrlcut,$107.00,2024-03-02
+Squair,Sterling,lngcut,$98.00,2024-03-02
+Strom,Emily,lngcut,$98.00,2024-03-02
+Weare,Jessica,lngcrlcut,$107.00,2024-03-02
+Weare,Jessica,acid,$20.00,2024-03-02
+Alremeithi,Ali,crlymullet,$73.00,2024-03-05
+Alremeithi,Ali,brdt,$20.00,2024-03-05
+Brady,Gavin,mullet,$70.00,2024-03-05
+Domen,Alyssa,lngcrlcut,$107.00,2024-03-05
+Domen,Alyssa,acid,$20.00,2024-03-05
+Landeryou,Sara,lngcrlcut,$107.00,2024-03-05
+Landeryou,Sara,cut4,$88.00,2024-03-05
+Landeryou,Sara,gloss1,$28.00,2024-03-05
+Landeryou,Sara,acid,$0.00,2024-03-05
+Smith,Janet A,mullet,$70.00,2024-03-05
+Smith,Janet A,acid,$20.00,2024-03-05
+Thurman,Payton,mullet,$70.00,2024-03-05
+Alremeithi,Ali,crlymullet,$73.00,2024-03-05
+Alremeithi,Ali,brdt,$20.00,2024-03-05
+Brady,Gavin,mullet,$70.00,2024-03-05
+Domen,Alyssa,lngcrlcut,$107.00,2024-03-05
+Domen,Alyssa,acid,$20.00,2024-03-05
+Landeryou,Sara,lngcrlcut,$107.00,2024-03-05
+Landeryou,Sara,cut4,$88.00,2024-03-05
+Landeryou,Sara,gloss1,$28.00,2024-03-05
+Landeryou,Sara,acid,$0.00,2024-03-05
+Smith,Janet A,mullet,$70.00,2024-03-05
+Smith,Janet A,acid,$20.00,2024-03-05
+Thurman,Payton,mullet,$70.00,2024-03-05
+Bower,Lily,lngcrlcut,$107.00,2024-03-06
+Bower,Lily,acid,$20.00,2024-03-06
+Cain,Doug,mullet,$70.00,2024-03-06
+Carter,Sarah,medct,$64.00,2024-03-06
+Carter,Sarah,acid,$20.00,2024-03-06
+Fisher,Katie,lngcrlcut,$107.00,2024-03-06
+Harp,Hunter,lngcut,$98.00,2024-03-06
+Harp,Hunter,acid,$20.00,2024-03-06
+Hart,Logan,medcrlcut,$98.00,2024-03-06
+McWherter,Carla,shrtcut,$69.00,2024-03-06
+Merring,Francis,mullet,$70.00,2024-03-06
+Rivet,Stacey,medcrlcut,$98.00,2024-03-06
+Vucelic,Mila,bt,$20.00,2024-03-06
+Bower,Lily,lngcrlcut,$107.00,2024-03-06
+Bower,Lily,acid,$20.00,2024-03-06
+Cain,Doug,mullet,$70.00,2024-03-06
+Carter,Sarah,medct,$64.00,2024-03-06
+Carter,Sarah,acid,$20.00,2024-03-06
+Fisher,Katie,lngcrlcut,$107.00,2024-03-06
+Harp,Hunter,lngcut,$98.00,2024-03-06
+Harp,Hunter,acid,$20.00,2024-03-06
+Hart,Logan,medcrlcut,$98.00,2024-03-06
+McWherter,Carla,shrtcut,$69.00,2024-03-06
+Merring,Francis,mullet,$70.00,2024-03-06
+Rivet,Stacey,medcrlcut,$98.00,2024-03-06
+Vucelic,Mila,bt,$20.00,2024-03-06
+Carrier,Natasha,shrtcut,$73.00,2024-03-07
+Fandel,Jacob,crlymullet,$73.00,2024-03-07
+Fandel,Jacob,acid,$20.00,2024-03-07
+Hatt,Rachel,shrtcut,$73.00,2024-03-07
+Hatt,Rachel,acid,$20.00,2024-03-07
+Jordan,Chole,crlymullet,$73.00,2024-03-07
+Mills,Krose,medcrlcut,$98.00,2024-03-07
+Nolan,Amara,shrtcut,$73.00,2024-03-07
+Rogers,Nubia,medct,$75.60,2024-03-07
+Seidel,Josef,crlymullet,$73.00,2024-03-07
+Seidel,Josef,acid,$20.00,2024-03-07
+Witgen,Chelsea,lngcut,$98.00,2024-03-07
+Wouters,Danny,shrtcut,$73.00,2024-03-07
+Yohannes,Merkeb,medcrlcut,$98.00,2024-03-07
+Britt,Madison,mullet,$70.00,2024-03-08
+Britt,Madison,acid,$20.00,2024-03-08
+Castillo,Eloisa,lngcrlcut,$107.00,2024-03-08
+Cender,Isaiah,acid,$20.00,2024-03-08
+Cender,Isaiah,crlymullet,$73.00,2024-03-08
+Dahlgren,Sabrina,adj,$0.00,2024-03-08
+Joye,Andrew,lngcrlcut,$107.00,2024-03-08
+McCoy,Devon,crlymullet,$73.00,2024-03-08
+McCoy,Devon,acid,$20.00,2024-03-08
+Roeglin,Jessica,scalpdtx,$8.00,2024-03-08
+Roeglin,Jessica,medct,$84.00,2024-03-08
+Rowe,Gregory,crlymullet,$73.00,2024-03-08
+Rowe,Gregory,acid,$20.00,2024-03-08
+Steele,Heather,mullet,$70.00,2024-03-08
+Steele,Heather,acid,$20.00,2024-03-08
+Updyke,Lindsay,lngcrlcut,$107.00,2024-03-08
+Updyke,Lindsay,acid,$20.00,2024-03-08
+Burnham,Jess,mullet,$70.00,2024-03-09
+Burnham,Jess,acid,$20.00,2024-03-09
+Childress,Bub,mullet,$50.00,2024-03-09
+Childress,Bub,lngcut,$78.00,2024-03-09
+Childress,Kayla,lngcut,$0.00,2024-03-09
+Diaz,Ellianna,lngcut,$98.00,2024-03-09
+Grady,Kirsten,medcrlcut,$98.00,2024-03-09
+Grady,Kirsten,acid,$20.00,2024-03-09
+Little,Tracey,lngcrlcut,$107.00,2024-03-09
+Schultz,Sarah,lngcut,$98.00,2024-03-09
+Skipper,Lauren,lngcrlcut,$107.00,2024-03-09
+Skipper,Lauren,acid,$20.00,2024-03-09
+Weaver,Cosette,shtcrlcut,$86.00,2024-03-09
+Weaver,Cosette,acid,$0.00,2024-03-09
+Balcer,Kai,mullet,$70.00,2024-03-11
+Balcer,Kai,acid,$20.00,2024-03-11
+Bell,Kacey,mullet,$70.00,2024-03-11
+Booker,Shawn,crlymullet,$73.00,2024-03-11
+Cook,Nick,shtcrlcut,$86.00,2024-03-11
+Gelfund,Mckenzie,adj,$0.00,2024-03-11
+Hernandez,Susie,clrbd,$0.00,2024-03-11
+Hernandez,Susie,cut4,$88.00,2024-03-11
+Hernandez,Susie,gloss1,$28.00,2024-03-11
+Jackson,Anna,mullet,$70.00,2024-03-11
+Meyers,Emily,mullet,$70.00,2024-03-11
+Meyers,Emily,acid,$20.00,2024-03-11
+Ney,Carter,mullet,$70.00,2024-03-11
+Tarasenko,Travis,mullet,$70.00,2024-03-11
+Tarasenko,Travis,mullet,-$70.00,2024-03-11
+Voj,Sterling,crlymullet,$73.00,2024-03-11
+Voj,Sterling,acid,$20.00,2024-03-11
+Allam,Josie,medct,$84.00,2024-03-12
+Fullerton,Eleanor,medcrlcut,$98.00,2024-03-12
+Keogh,Becky,medcrlcut,$98.00,2024-03-12
+Keogh,Becky,acid,$20.00,2024-03-12
+MacNeill,Perry,mullet,$70.00,2024-03-12
+MacNeill,Perry,acid,$20.00,2024-03-12
+Parks,Arya,acid,$0.00,2024-03-12
+Parks,Caroline,lngcrlcut,$107.00,2024-03-12
+Parks,Caroline,cut4,$88.00,2024-03-12
+Said,Alec,medct,$84.00,2024-03-12
+Sporey,Fredrick,adj,$0.00,2024-03-12
+Parker,Katrina,lngcrlcut,$53.50,2024-03-12
+Emery,Joey,shtcrlcut,$86.00,2024-03-14
+Florian,Jason,mullet,$70.00,2024-03-14
+Florian,Jason,brdt,$20.00,2024-03-14
+Hunter,Nick,crlymullet,$73.00,2024-03-14
+Johnston,Erik,mullet,$70.00,2024-03-14
+Kellogg,Melly,adj,$0.00,2024-03-14
+Lange,Nolan,sbd,$36.00,2024-03-14
+Levering,Corinne,mullet,$50.00,2024-03-14
+Mwangi,Noelle,lngcrlcut,$107.00,2024-03-14
+Mwangi,Noelle,mis,$10.00,2024-03-14
+Mwangi,Noelle,acid,$20.00,2024-03-14
+Plumaj,Bella,lngcut,$98.00,2024-03-14
+Sherrill,Amanda,shtcrlcut,$86.00,2024-03-14
+Webb,Jaye,mullet,$70.00,2024-03-14
+Whipple,Stacy,lngcrlcut,$107.00,2024-03-14
+Whipple,Stacy,acid,$20.00,2024-03-14
+Zalewski,Henry,crlymullet,$73.00,2024-03-14
+Abbott,Kelsey,mullet,$70.00,2024-03-15
+Bartrem,William,mullet,$70.00,2024-03-15
+Ellsworth,Azalea,acid,$20.00,2024-03-15
+Ellsworth,Azalea,crlymullet,$73.00,2024-03-15
+Mensonides,Kelsea,bt,$20.00,2024-03-15
+Montgomery,Serenity,kcc,$60.00,2024-03-15
+Orozco,Carolina,crlymullet,$73.00,2024-03-15
+Piehutkoski,Nathan,mullet,$70.00,2024-03-15
+Rector-Brooks,Bug,crlymullet,$73.00,2024-03-15
+Rector-Brooks,Bug,acid,$20.00,2024-03-15
+Saylor,Nolan,medcrlcut,$78.00,2024-03-15
+Terry,Dylan,brdt,$20.00,2024-03-15
+Terry,Dylan,crlymullet,$73.00,2024-03-15
+Borges,Martina,lngcut,$98.00,2024-03-16
+Chambers,Kailee,medcrlcut,$98.00,2024-03-16
+Chambers,Kailee,acid,$20.00,2024-03-16
+Foshee,Penny,shtcrlcut,$86.00,2024-03-16
+Klusack,Triston,shtcrlcut,$50.00,2024-03-16
+LaRue,Iman,acid,$20.00,2024-03-16
+Lucania,Natalie,lngcrlcut,$107.00,2024-03-16
+Mocon,Pamela,mullet,$70.00,2024-03-16
+Mocon,Pamela,acid,$20.00,2024-03-16
+Mocon,Pamela,mis,$5.00,2024-03-16
+Pelletier,Joshua,mullet,$70.00,2024-03-16
+Robbins,Jami,mullet,$70.00,2024-03-16
+Robbins,Jami,acid,$20.00,2024-03-16
+Smith,Tyler,crlymullet,$73.00,2024-03-16
+Smith,Tyler,brdt,$20.00,2024-03-16
+Smith,Tyler,acid,$20.00,2024-03-16
+Wieferich,Ashely,lngcrlcut,$107.00,2024-03-16
+Wieferich,Ashely,acid,$20.00,2024-03-16
+Blommel,Pat,lngcrlcut,$107.00,2024-03-18
+Blommel,Pat,acid,$20.00,2024-03-18
+Cahill,Chris,lngcrlcut,$107.00,2024-03-18
+Cahill,Chris,acid,$20.00,2024-03-18
+Duncan,Jason,lngcrlcut,$107.00,2024-03-18
+Hildebrand,Carol,lngcut,$98.00,2024-03-18
+Hildebrand,Carol,cut4,$88.00,2024-03-18
+Hildebrand,Carol,acid,$20.00,2024-03-18
+Klochack,Peyton,mullet,$70.00,2024-03-18
+Klochack,Peyton,acid,$20.00,2024-03-18
+Klochack,Peyton,brdt,$20.00,2024-03-18
+Smith,Josh,mullet,$70.00,2024-03-18
+Stinson,Forest,shrtcut,$73.00,2024-03-18
+Wallace,Zackary,crlymullet,$73.00,2024-03-18
+Wimes,Brenden,lngcrlcut,$107.00,2024-03-18
+Andronic,Olivia,lngcut,$98.00,2024-03-19
+Andronic,Savannah,lngcrlcut,$107.00,2024-03-19
+Carlson,Michelle,crtbd,$0.00,2024-03-19
+Carlson,Michelle,cut4,$88.00,2024-03-19
+Carlson,Michelle,bdnc,$28.00,2024-03-19
+Conley,Molly,medcrlcut,$98.00,2024-03-19
+Conley,Molly,acid,$20.00,2024-03-19
+Cook,Jack,chldmlt,$50.00,2024-03-19
+Rock,James,mullet,$70.00,2024-03-19
+Rock,James,brdt,$20.00,2024-03-19
+Tarrant,Quinn,chldmlt,$50.00,2024-03-19
+Way,Emily,lngcut,$98.00,2024-03-19
+Bigg,Jalen,mullet,$70.00,2024-03-21
+Kost,Rebecca,lngcrlcut,$107.00,2024-03-21
+Kost,Rebecca,acid,$20.00,2024-03-21
+Layne,Elijah,crlymullet,$73.00,2024-03-21
+McAdams,Kyle,shtcrlcut,$86.00,2024-03-21
+McAdams,Kyle,acid,$20.00,2024-03-21
+Mills,Aubreyanna,lngcrlcut,$107.00,2024-03-21
+Morris,Liam,mullet,$70.00,2024-03-21
+Porter,Nyerah,lngcrlcut,$87.00,2024-03-21
+Porter,Nyerah,acid,$20.00,2024-03-21
+Presley,Blake,crlymullet,$73.00,2024-03-21
+Robledo,Kaitlyn,lngcut,$98.00,2024-03-21
+Robledo,Kaitlyn,acid,$20.00,2024-03-21
+Schenbum,Magdalena,lngcrlcut,$107.00,2024-03-21
+Schenbum,Magdalena,acid,$20.00,2024-03-21
+Stratilatov,Sara,lngcrlcut,$53.50,2024-03-21
+Bosnic,Neelan,medct,$84.00,2024-03-22
+Gardner,Colin,mullet,$60.00,2024-03-22
+Madouse,Ethan,mullet,$70.00,2024-03-22
+Noble,Thomas,shrtcut,$73.00,2024-03-22
+Thomas,Madison,mullet,$0.00,2024-03-22
+Thurmond,Cassidy,acid,$20.00,2024-03-22
+Thurmond,Cassidy,lngcut,$78.00,2024-03-22
+Uguccioni,Lisa,crlymullet,$73.00,2024-03-22
+Uguccioni,Lisa,gloss2,$36.00,2024-03-22
+Uguccioni,Lisa,cut4,$88.00,2024-03-22
+Uguccioni,Lisa,acid,$20.00,2024-03-22
+Vajal,Nayeoi,acid,$20.00,2024-03-22
+Vajal,Nayeoi,lngcrlcut,$97.00,2024-03-22
+Whipple,Emma,acid,$20.00,2024-03-22
+Whipple,Emma,lngcrlcut,$107.00,2024-03-22
+Lahoud,Cameron,medcrlcut (cancellation fee),$49.00,2024-03-22
+Chipperfield,Ryker,chldmlt,$50.00,2024-03-23
+Hambley,Mason,medct,$84.00,2024-03-23
+Pearce,Liz,medcrlcut,$98.00,2024-03-23
+Pearce,Liz,acid,$20.00,2024-03-23
+Pearce,Maya,medcrlcut,$98.00,2024-03-23
+Pearce,Maya,acid,$20.00,2024-03-23
+Philips,Janet,medct,$84.00,2024-03-23
+Vastine,Allison,lngcut,$98.00,2024-03-23
+Vastine,Allison,acid,$20.00,2024-03-23
+White,Geralyn,medct,$84.00,2024-03-23
+Anderson,Finn,shrtcut,$73.00,2024-03-25
+Fox,Lindsey,lngcut,$98.00,2024-03-25
+Klingbeil,Kirk,shrtcut,$73.00,2024-03-25
+Lahoud,Daniella,lngcrlcut,$107.00,2024-03-25
+Lahoud,Daniella,acid,$20.00,2024-03-25
+Shrader,Jim,chldmlt,$50.00,2024-03-25
+Singleton,Liam,medct,$84.00,2024-03-25
+Singleton,Liam,acid,$20.00,2024-03-25
+Tebeau,Abby,lngcrlcut,$107.00,2024-03-25
+Tebeau,Abby,acid,$20.00,2024-03-25
+Van Lear,Libby,acid,$20.00,2024-03-25
+Van Lear,Libby,lngcrlcut,$107.00,2024-03-25
+Baker,Melody,crlymullet,$73.00,2024-03-26
+Carrier,Natasha,shrtcut,$73.00,2024-03-26
+Estibeiro,Vanessa,lngcrlcut,$107.00,2024-03-26
+Estibeiro,Vanessa,acid,$20.00,2024-03-26
+gutierrez,mya,lngcut,$98.00,2024-03-26
+gutierrez,mya,acid,$20.00,2024-03-26
+Haus,Miranda,lngcrlcut,$107.00,2024-03-26
+Haus,Miranda,acid,$20.00,2024-03-26
+Huberty,Sean,mullet,$70.00,2024-03-26
+Huberty,Sean,acid,$20.00,2024-03-26
+Huberty,Sean,brdt,$20.00,2024-03-26
+Marinelli,Justin,lngcrlcut,$107.00,2024-03-26
+B,Seema,lngcrlcut,$107.00,2024-03-28
+B,Seema,acid,$20.00,2024-03-28
+Battle,Ella,crlymullet,$36.50,2024-03-28
+Byrne,Ryan,medcrlcut,$0.00,2024-03-28
+Byrne,Ryan,acid,$20.00,2024-03-28
+Byrne,Ryan,crlymullet,$58.40,2024-03-28
+Jackson,Ozzie,mullet,$70.00,2024-03-28
+Jackson,Ozzie,acid,$20.00,2024-03-28
+Jackson,Paxton,mullet,$70.00,2024-03-28
+Kolich,Sami Jo,acid,$20.00,2024-03-28
+Kolich,Sami Jo,mullet,$70.00,2024-03-28
+Kuykendoll,Micaiah,sbd,$36.00,2024-03-28
+Kuykendoll,Micaiah,acid,$20.00,2024-03-28
+Marciniak,Heather,mullet,$70.00,2024-03-28
+Masino,Marlene,lngcut,$98.00,2024-03-28
+Miller,Jasper,mullet,$70.00,2024-03-28
+Anderson,Amy,crlymullet,$73.00,2024-03-29
+Dodd,Mallory,mullet,$70.00,2024-03-29
+Huffaker,Tristan,mullet,$70.00,2024-03-29
+Marshall,Jordan,lngcrlcut,$107.00,2024-03-29
+Marshall,Jordan,cut4,$88.00,2024-03-29
+Marshall,Jordan,gloss1,$28.00,2024-03-29
+Marshall,Jordan,acid,$20.00,2024-03-29
+McGinley,Lexi,brt,$17.00,2024-03-29
+McGinley,Lexi,cut4,$88.00,2024-03-29
+McGinley,Lexi,mullet,$70.00,2024-03-29
+Peterson,Ethan,lngcut,$98.00,2024-03-29
+Peterson,Ethan,acid,$20.00,2024-03-29
+Vaitkaitis,Marta,lngcut,$78.00,2024-03-29
+Welch,Sam,mullet,$56.00,2024-03-29
+Willmore,Cloey,acid,$20.00,2024-03-29
+Willmore,Cloey,lngcrlcut,$107.00,2024-03-29
+Baker,Megan,medcrlcut,$98.00,2024-03-30
+Baker,Megan,acid,$0.00,2024-03-30
+Eaton,Shelby,mullet,$70.00,2024-03-30
+Luehr,Evin,lngcrlcut,$107.00,2024-03-30
+Luehr,Evin,acid,$20.00,2024-03-30
+Malott,Shaunna,mullet,$70.00,2024-03-30
+Malott,Shaunna,acid,$20.00,2024-03-30
+McConnell,Spencer,shtcrlcut,$86.00,2024-03-30
+McConnell,Spencer,acid,$0.00,2024-03-30
+Visser,Colin,mullet,$70.00,2024-03-30
+Cole,Derek,mullet,$70.00,2024-04-01
+Lenor,Fern,mullet,$17.50,2024-04-01
+Lenor,Fern,cut4,$22.00,2024-04-01
+Perry,Chuck,medct,$0.00,2024-04-01
+Perry,Chuck,shrtcut,$73.00,2024-04-01
+Rueckert,Brooke,crlymullet,$73.00,2024-04-01
+Rupley,Cassidy,lngcrlcut,$107.00,2024-04-01
+Rupley,Cassidy,acid,$20.00,2024-04-01
+Schodowski,Mars,medct,$0.00,2024-04-01
+Schodowski,Mars,shrtcut,$73.00,2024-04-01
+Wisdom,Hannah,medct,$84.00,2024-04-01
+Beckley,Emma,lngcrlcut,$107.00,2024-04-02
+Beckley,Emma,acid,$20.00,2024-04-02
+Bell,Jett,crlymullet,$73.00,2024-04-02
+Birdsall,Kathryn,lngcut,$98.00,2024-04-02
+Pine,Angelle,lngcut,$98.00,2024-04-02
+Pine,Angelle,acid,$20.00,2024-04-02
+Porter,Nyerah,adj,$0.00,2024-04-02
+Rogers,Nubia,bt,$20.00,2024-04-02
+Smith,Adrian,mullet,$70.00,2024-04-02
+Sowulewski,Ryan,crlymullet,$73.00,2024-04-02
+Stanisz,Jean,cc,$125.30,2024-04-02
+Campbell,Karen,mullet,$70.00,2024-04-04
+Cates,Allie,lngcrlcut,$107.00,2024-04-04
+Cates,Allie,acid,$20.00,2024-04-04
+Edwards,Tracy,shtcrlcut,$86.00,2024-04-04
+Edwards,Tracy,acid,$0.00,2024-04-04
+Hanson,Katie,shrtcut,$73.00,2024-04-04
+Haueter,Ami,medcrlcut,$98.00,2024-04-04
+Haueter,Ami,acid,$20.00,2024-04-04
+Kammerzell,Avery,medcrlcut,$98.00,2024-04-04
+Kammerzell,Avery,acid,$20.00,2024-04-04
+Krish,Emilee,lngcut,$98.00,2024-04-04
+Lingan,David Cody,acid,$20.00,2024-04-04
+Lingan,David Cody,mullet,$70.00,2024-04-04
+Miller,Ronnie,lngcrlcut,$107.00,2024-04-04
+Miller,Ronnie,xfin,$5.00,2024-04-04
+Miller,Ronnie,acid,$0.00,2024-04-04
+Priest,Lex,lngcut,$98.00,2024-04-04
+Richard,Clover,crlymullet,$73.00,2024-04-04
+Spender,Claire,shrtcut,$73.00,2024-04-04
+Koetsier,Taylor,lngcut,$98.00,2024-04-05
+Koetsier,Taylor,acid,$20.00,2024-04-05
+Malinoski,Stacey,medct,$84.00,2024-04-05
+Schopmeyer,Mia,lngcut,$98.00,2024-04-05
+Schopmeyer,Mia,acid,$20.00,2024-04-05
+Shuptar,Ericka,lngcrlcut,$107.00,2024-04-05
+Shuptar,Ericka,acid,$20.00,2024-04-05
+Strong,Baileigh,lngcut,$98.00,2024-04-05
+Westrick,Lachlan,medct,$84.00,2024-04-05
+Williams,Elaina,fbalct,$0.00,2024-04-05
+Williams,Elaina,toner2,$36.00,2024-04-05
+Williams,Elaina,ff,$147.00,2024-04-05
+Fisher,Dakota,mullet,$70.00,2024-04-06
+Frei,Cameron,mullet,$70.00,2024-04-06
+Riddle,Lauren,lngcrlcut,$107.00,2024-04-06
+Riddle,Lauren,acid,$20.00,2024-04-06
+Rode,Lila,mullet,$70.00,2024-04-06
+Seymour,Heather,lngcut,$98.00,2024-04-06
+Taylor,Mariah,lngcrlcut,$107.00,2024-04-06
+Rowe,Gregory,crlymullet (no show fee),$36.50,2024-04-06
+Althani,Hessa,lngcrlcut,$107.00,2024-04-08
+Althani,Hessa,acid,$20.00,2024-04-08
+Bonner,Athena,mullet,$70.00,2024-04-08
+Camilli,Daniel,mullet,$59.50,2024-04-08
+Hanlon,Kelly,mullet,$70.00,2024-04-08
+Kasprzak,Emily,lngcut,$98.00,2024-04-08
+McConnell,Aiden,mullet,$70.00,2024-04-08
+Middleswarth,Marina,lngcut,$98.00,2024-04-08
+Middleswarth,Marina,acid,$20.00,2024-04-08
+Sundeen,Kelly,medcrlcut,$98.00,2024-04-08
+Wells,Gabrielle,lngcut,$98.00,2024-04-08
+Bermejo,Jessica,medcrlcut,$98.00,2024-04-09
+Bermejo,Jessica,acid,$20.00,2024-04-09
+Delgado,Vincent,mullet,$50.00,2024-04-09
+Doner,Emily,lngcut,$98.00,2024-04-09
+Hardy,Atticus,medct,$84.00,2024-04-09
+Hay,Brendan,crlymullet,$73.00,2024-04-09
+Kartsounes,Chapin,mullet,$70.00,2024-04-09
+Nowakowski,Ethan,lngcrlcut,$107.00,2024-04-09
+Roethele,Brit,mullet,$70.00,2024-04-09
+Thrush,Taylor,lngcut,$98.00,2024-04-09
+Alpers,Courtney,lngcrlcut,$107.00,2024-04-11
+Alpers,Courtney,acid,$20.00,2024-04-11
+Cano,Evelyn,lngcrlcut,$107.00,2024-04-11
+Dingeman,Bronwen,medct,$84.00,2024-04-11
+Dingeman,Bronwen,acid,$20.00,2024-04-11
+Florian,Jason,mullet,$70.00,2024-04-11
+Gurd,Seth,crlymullet,$73.00,2024-04-11
+Gurd,Seth,acid,$20.00,2024-04-11
+Harper,Sarah,crlymullet,$73.00,2024-04-11
+Miller,Sarah,medct,$84.00,2024-04-11
+Platte,Logan,chldmlt,$50.00,2024-04-11
+Sabato,John,mullet,$50.00,2024-04-11
+Sabato,John,acid,$20.00,2024-04-11
+Saxon,Daphne,lngcrlcut,$107.00,2024-04-11
+Saxon,Daphne,acid,$20.00,2024-04-11
+Strong,Bonnie,shtcrlcut,$86.00,2024-04-11
+Strong,Bonnie,acid,$20.00,2024-04-11
+Wheeler,Olivia,lngcut,$98.00,2024-04-11
+Brasseur,Aime,shtcrlcut,$86.00,2024-04-12
+Brasseur,Aime,acid,$20.00,2024-04-12
+Ferreria,Abel,chldmlt,$50.00,2024-04-12
+Harp,Hunter,lngcut,$98.00,2024-04-12
+Lopez,Shannon,crlymullet,$73.00,2024-04-12
+Nagra,Vismaad,con,$0.00,2024-04-12
+Rodriguez,Ellie,lngcut,$98.00,2024-04-12
+Rodriguez,Ellie,acid,$20.00,2024-04-12
+Sanders,Elle,lngcrlcut,$107.00,2024-04-12
+Sanders,Elle,acid,$20.00,2024-04-12
+Spencer,Lauren,lngcrlcut,$107.00,2024-04-12
+Spencer,Lauren,misc,$7.00,2024-04-12
+Spencer,Lauren,acid,$20.00,2024-04-12
+Stoddard,Chloe,crlymullet,$73.00,2024-04-12
+Van Nocker,Sandra,lngcut,$107.00,2024-04-12
+Van Nocker,Sandra,acid,$20.00,2024-04-12
+Alverson,Jen,lngcut,$98.00,2024-04-13
+Alverson,Jen,acid,$20.00,2024-04-13
+Arroyo,Jessica,crlymullet,$73.00,2024-04-13
+Arroyo,Jessica,acid,$20.00,2024-04-13
+Bartrem,William,mullet,$70.00,2024-04-13
+Carman,Laura,crlymullet,$73.00,2024-04-13
+Carman,Laura,acid,$20.00,2024-04-13
+Hammond,Ethan,mullet,$70.00,2024-04-13
+Hazzard,Megan,medcrlcut,$98.00,2024-04-13
+Rodgers,Alexandra,lngcrlcut,$87.00,2024-04-13
+Woodward,Jessica,medcrlcut,$98.00,2024-04-13
+Carlson,Michelle,lngcrlcut,$107.00,2024-04-15
+Carlson,Michelle,acid,$20.00,2024-04-15
+Carlson,Michelle,cut4,$88.00,2024-04-15
+Carlson,Michelle,gloss2,$36.00,2024-04-15
+Carpenter,Debra,mullet,$70.00,2024-04-15
+Carrier,Natasha,shrtcut,$73.00,2024-04-15
+Christiansen,Claire,mullet,$70.00,2024-04-15
+Christiansen,Claire,acid,$20.00,2024-04-15
+Fernandez,Jho,crlymullet,$73.00,2024-04-15
+Fisher,Lauren,lngcrlcut,$107.00,2024-04-15
+Fisher,Lauren,acid,$20.00,2024-04-15
+Fraticelli,Robby,crlymullet,$73.00,2024-04-15
+Hewitt,Sarah,lngcut,$98.00,2024-04-15
+Hewitt,Sarah,acid,$20.00,2024-04-15
+Levinsohn,Reuben,shtcrlcut,$86.00,2024-04-15
+Soule,Tyler,shtcrlcut,$66.00,2024-04-15
+Wardlaw,Allison,medcrlcut,$98.00,2024-04-15
+Wardlaw,Allison,acid,$20.00,2024-04-15
+Alremeithi,Ali,crlymullet,$36.50,2024-04-16
+Odom,Christopher,mullet,$70.00,2024-04-16
+Pancy,Tommy,mullet,$70.00,2024-04-16
+Reilly,Hannah,lngcrlcut,$107.00,2024-04-16
+Richey,Lisa,medct,$84.00,2024-04-16
+Sheehan-D'Arrigo,Mackenzie,shtcrlcut,$86.00,2024-04-16
+Smith,Janet A,mullet,$70.00,2024-04-16
+Thurman,Payton,mullet,$70.00,2024-04-16
+Whitman,Ana,lngcrlcut,$107.00,2024-04-16
+Wiselogle,Pierce,mullet,$70.00,2024-04-16
+Sparks,Celyn,kcc,$60.00,2024-04-18
+Korte,Kyle,shtcrlcut,$86.00,2024-04-18
+Heuhs,Kerry,shtcrlcut,$86.00,2024-04-18
+Parks,Kayla,crlymullet,$73.00,2024-04-18
+Parks,Kayla,acid,$20.00,2024-04-18
+Li,Jodi,lngcut,$98.00,2024-04-18
+Travis,Katie,medct,$84.00,2024-04-18
+Subhedar,Rita,medcrlcut,$98.00,2024-04-18
+Subhedar,Rita,acid,$20.00,2024-04-18
+Venkat,Sakshi,medcrlcut,$98.00,2024-04-18
+House,Becky,shrtcut,$73.00,2024-04-18
+Cooley,Adrienne,lngcrlcut,$107.00,2024-04-18
+Cooley,Adrienne,acid,$20.00,2024-04-18
+Fulghum,Kaitlyn,medct,$84.00,2024-04-18
+Fulghum,Kaitlyn,acid,$20.00,2024-04-18
+Rodriguez,Gage,mullet,$70.00,2024-04-18
+Disbrow,Dameon,medcrlcut,$98.00,2024-04-18
+Barkman,Ben,lngcrlcut,$107.00,2024-04-19
+Jones,Brandon,crlymullet,$73.00,2024-04-19
+Groll,Amanda,medcrlcut,$98.00,2024-04-19
+Villa,Marlene,lngcrlcut,$107.00,2024-04-19
+Villa,Marlene,acid,$20.00,2024-04-19
+Lietzau,Stephanie,lngcrlcut,$107.00,2024-04-19
+Lietzau,Stephanie,acid,$20.00,2024-04-19
+Marsh,Jeff,crlymullet,$73.00,2024-04-19
+Marsh,Jeff,acid,$20.00,2024-04-19
+Gago,Marrem,medcrlcut,$98.00,2024-04-19
+Gago,Marrem,acid,$20.00,2024-04-19
+Okeefe,Finn,shtcrlcut,$86.00,2024-04-19
+Delasquez,Elyse,lngcrlcut,$107.00,2024-04-19
+Luedtke,Chloe,medcrlcut,$98.00,2024-04-19
+Brandon,Shannon,mullet,$70.00,2024-04-20
+Bussa,Amanda,shtcrlcut,$86.00,2024-04-20
+Rohlman,Kelly,lngcut,$98.00,2024-04-20
+Rowe,Tara,lngcut,$98.00,2024-04-20
+Redden,McKinley,crlymullet,$73.00,2024-04-20
+Redden,McKinley,acid,$20.00,2024-04-20
+Smith,Tyler,crlymullet,$73.00,2024-04-20
+Smith,Tyler,brdt,$20.00,2024-04-20
+Cosme,Diann,lngcrlcut,$107.00,2024-04-20
+Cosme,Diann,acid,$20.00,2024-04-20
+Chevis,Alli,shrtcut,$73.00,2024-04-22
+Klochack,Peyton,mullet,$70.00,2024-04-22
+Klochack,Peyton,brdt,$20.00,2024-04-22
+A,Amir,medcrlcut,$98.00,2024-04-22
+A,Amir,acid,$20.00,2024-04-22
+Harroll,Ozzy,chldmlt,$50.00,2024-04-22
+Stoner,Natalie,lngcut,$98.00,2024-04-22
+Stoner,Natalie,acid,$20.00,2024-04-22
+Merring,Francis,mullet,$70.00,2024-04-22
+Connelly,LeeAnn,shtcrlcut,$86.00,2024-04-22
+Connelly,LeeAnn,acid,$20.00,2024-04-22
+Tarasenko,Travis,mullet,$70.00,2024-04-22
+Beal,Maddie,lngcrlcut,$107.00,2024-04-22
+Rodgers,Scott,medct,$84.00,2024-04-22
+Chevis,Alli,shrtcut,$73.00,2024-04-22
+Klochack,Peyton,mullet,$70.00,2024-04-22
+Klochack,Peyton,brdt,$20.00,2024-04-22
+A,Amir,medcrlcut,$98.00,2024-04-22
+A,Amir,acid,$20.00,2024-04-22
+Harroll,Ozzy,chldmlt,$50.00,2024-04-22
+Stoner,Natalie,lngcut,$98.00,2024-04-22
+Stoner,Natalie,acid,$20.00,2024-04-22
+Merring,Francis,mullet,$70.00,2024-04-22
+Connelly,Leeann,shtcrlcut,$86.00,2024-04-22
+Connelly,Leeann,acid,$20.00,2024-04-22
+Tarasenko,Travis,mullet,$70.00,2024-04-22
+Beal,Maddie,lngcrlcut,$107.00,2024-04-22
+Rodgers,Scott,medct,$84.00,2024-04-22
+VanGordon,Paige,crlymullet,$73.00,2024-04-23
+Mudrey,Jack,shtcrlcut,$86.00,2024-04-23
+Mudrey,Jack,acid,$20.00,2024-04-23
+Childress,Bub,mullet,$70.00,2024-04-23
+Childress,Kayla,bt,$20.00,2024-04-23
+Wheeler,Jessica,bt,$20.00,2024-04-23
+Hernandez,Susie,clrcurl,$0.00,2024-04-23
+Hernandez,Susie,cut4,$88.00,2024-04-23
+Hernandez,Susie,gloss2,$36.00,2024-04-23
+Hernandez,Susie,lngcrlcut,$107.00,2024-04-23
+Carter,Elijah,chldmlt,$50.00,2024-04-23
+McClain,Robin,medcrlcut,$98.00,2024-04-23
+McClain,Robin,cut4,$88.00,2024-04-23
+McClain,Robin,acid,$20.00,2024-04-23
+Kissel,Samantha,lngcrlcut,$107.00,2024-04-23
+Longanbach,Marlys,medcrlcut,$98.00,2024-04-25
+Longanbach,Marlys,acid,$20.00,2024-04-25
+Nienhuis,Arie,crlymullet,$73.00,2024-04-25
+Novack,Mike,mullet,$70.00,2024-04-25
+Novack,Mike,acid,$20.00,2024-04-25
+Novack,Mike,brdt,$20.00,2024-04-25
+Campau,Cameron,mullet,$70.00,2024-04-25
+Campau,Cameron,brdt,$20.00,2024-04-25
+Stanton,Gary,mullet,$70.00,2024-04-25
+Kiesgen,Mackenzie,mullet,$70.00,2024-04-25
+Kiesgen,Mackenzie,cut4,$88.00,2024-04-25
+Kiesgen,Mackenzie,acid,$20.00,2024-04-25
+Barlow,Alicia,lngcrlcut,$107.00,2024-04-25
+Barlow,Alicia,mis,$10.00,2024-04-25
+Morris,Liam,mullet,$70.00,2024-04-25
+Lahoud,Cameron,medcrlcut,$98.00,2024-04-25
+Rice,Cheryl,medcrlcut,$98.00,2024-04-25
+Rice,Cheryl,acid,$20.00,2024-04-25
+Dehaan,Kyle,mullet,$70.00,2024-04-25
+Dehaan,Kyle,acid,$20.00,2024-04-25
+Lemieux,Madison,lngcrlcut,$107.00,2024-04-25
+Lange,Nolan,crlymullet,$73.00,2024-04-25
+Mcginley,Lexi,bt,$20.00,2024-04-26
+Murillo,Andrea,lngcrlcut,$107.00,2024-04-26
+Murillo,Andrea,acid,$20.00,2024-04-26
+Worden,Darienne,medct,$84.00,2024-04-26
+Worden,Darienne,acid,$20.00,2024-04-26
+Lachniet,Miranda,medct,$84.00,2024-04-26
+Angell,Ab,lngcrlcut,$107.00,2024-04-26
+Angell,Ab,acid,$20.00,2024-04-26
+Hall,Cameron,mullet,$70.00,2024-04-26
+Ross,Alaysia,medcrlcut,$98.00,2024-04-26
+Ross,Alaysia,acid,$20.00,2024-04-26
+Rembisz,Sarah,medcrlcut,$98.00,2024-04-26
+Henry-dicken,Bethany,mullet,$70.00,2024-04-26
+Henry-dicken,Bethany,acid,$20.00,2024-04-26
+Carpenter,Natalia,lngcrlcut,$107.00,2024-04-26
+Ozdych,Daisy,lngcrlcut,$107.00,2024-04-27
+Terry,Dylan,crlymullet,$73.00,2024-04-27
+Terry,Dylan,brdt,$20.00,2024-04-27
+Severance,Laura,medcrlcut,$98.00,2024-04-27
+Severance,Laura,acid,$20.00,2024-04-27
+Burnham,Jess,mullet,$70.00,2024-04-27
+Burnham,Jess,acid,$20.00,2024-04-27
+Zimmerman,Shawn,lngcrlcut,$107.00,2024-04-27
+Zimmerman,Shawn,acid,$20.00,2024-04-27
+Stumm,Cameron,mullet,$70.00,2024-04-27
+Covarrubias-flores,Jose,crlymullet,$73.00,2024-04-27
+Covarrubias-flores,Jose,cut4,$88.00,2024-04-27
+Covarrubias-flores,Jose,gloss2,$36.00,2024-04-27
+Covarrubias-flores,Jose,bdnc,$28.00,2024-04-27
+Covarrubias-flores,Jose,bt,$15.00,2024-04-27
+Nickels,Calli,bt,$20.00,2024-04-27
+Lemore,Alicia,medct,$84.00,2024-04-27
+Niethammer,Gordie,mullet,$70.00,2024-04-29
+Niethammer,Gordie,acid,$20.00,2024-04-29
+Carpenter,Kaylee,lngcrlcut,$107.00,2024-04-29
+Carpenter,Kaylee,acid,$20.00,2024-04-29
+Martinez,Jovan,mullet,$70.00,2024-04-29
+Pontifex,Katie,lngcut,$98.00,2024-04-29
+Thompson,Juno,lngcut,$98.00,2024-04-29
+Richter,Susan,lngcrlcut,$107.00,2024-04-29
+Richter,Susan,acid,$0.00,2024-04-29
+Randall,Jessica,medct,$84.00,2024-04-29
+Daniels,Logan,shtcrlcut,$86.00,2024-04-29
+Malusek,Meghan,medcrlcut,$0.00,2024-04-29
+Malusek,Meghan,acid,$0.00,2024-04-29
+Malusek,Meghan,lngcrlcut,$107.00,2024-04-29
+Osann,Savina,mullet,$70.00,2024-04-30
+Williams,Sarah,medct,$84.00,2024-04-30
+Ocanas,Karina,mullet,$70.00,2024-04-30
+Thurman,Heath,shtcrlcut,$86.00,2024-04-30
+Janis,Bridget,lngcut,$98.00,2024-04-30
+Janis,Bridget,acid,$20.00,2024-04-30
+Delatorre,Esperanza,medct,$84.00,2024-04-30
+Delatorre,Esperanza,acid,$20.00,2024-04-30
+Nelson,Benjamin,lngcut,$98.00,2024-04-30
+Lesher,Amber,lngcut,$98.00,2024-04-30
+Antaya,Zach,adj,$0.00,2024-05-02
+Brewer,Gabrielle,lngcrlcut,$107.00,2024-05-02
+Brewer,Gabrielle,acid,$20.00,2024-05-02
+Schoen,Rj,lngcut,$98.00,2024-05-02
+Patterson,Mackenzie,medct,$84.00,2024-05-02
+Hay,Brendan,crlymullet,$73.00,2024-05-02
+Decker,Kara,lngcrlcut,$107.00,2024-05-02
+Decker,Kara,acid,$20.00,2024-05-02
+Gordon,Sharee,mullet,$70.00,2024-05-02
+Brackett,Abbey,shrtcut,$73.00,2024-05-02
+Abood,Rhonda,lngcut,$98.00,2024-05-02
+Abood,Rhonda,acid,$20.00,2024-05-02
+Forbush,Troy,lngcrlcut,$87.00,2024-05-02
+Forbush,Troy,acid,$20.00,2024-05-02
+Jiang,Kevin,mullet,$70.00,2024-05-02
+Henry,Alexis,lngcrlcut,$107.00,2024-05-02
+Henry,Alexis,acid,$20.00,2024-05-02
+Hunter,Nick,crlymullet,$73.00,2024-05-02
+Janis,Bridget,adj,$0.00,2024-05-02
+Short,Caleb,lngcrlcut,$107.00,2024-05-03
+Short,Caleb,acid,$0.00,2024-05-03
+Short,Caleb,brdt,$20.00,2024-05-03
+Thomas,Madison,mullet,$70.00,2024-05-03
+Suleiman,Fatena,lngcrlcut,$107.00,2024-05-03
+Suleiman,Fatena,acid,$20.00,2024-05-03
+Manzo,Antonio,medcrlcut,$98.00,2024-05-03
+Manzo,Antonio,acid,$0.00,2024-05-03
+Wright,Maggie,lngcrlcut,$107.00,2024-05-03
+Gardner,Colin,mullet,$70.00,2024-05-03
+Reynolds,Ryen,lngcrlcut,$107.00,2024-05-03
+Feldpausch,Desiree,shtcrlcut,$86.00,2024-05-03
+Tuneff,Dan,crlymullet,$73.00,2024-05-03
+Sexton,Aeris,medcrlcut,$0.00,2024-05-04
+Sexton,Aeris,adj,$0.00,2024-05-04
+Macias,Maria,shrtcut,$73.00,2024-05-04
+Vucelic,Mila,lngcrlcut,$107.00,2024-05-04
+Vucelic,Mila,acid,$20.00,2024-05-04
+Mchugh,Gabby,lngcut,$0.00,2024-05-04
+Mchugh,Gabby,mullet,$70.00,2024-05-04
+Legg,Madi,bt,$20.00,2024-05-04
+Brinkley-batterbee,Rebecca,medcrlcut,$98.00,2024-05-04
+Thierry,Stephanie,crlymullet,$73.00,2024-05-04
+Thierry,Stephanie,acid,$20.00,2024-05-04
+Rowe,Gregory,crlymullet,$73.00,2024-05-04
+Rowe,Gregory,acid,$20.00,2024-05-04
+Rowe,Gregory,mis,$36.50,2024-05-04
+Frost,Lily,medcrlcut,$98.00,2024-05-04
+Frost,Lily,acid,$20.00,2024-05-04
+Mensonides,Kelsea,lngcrlcut,$107.00,2024-05-06
+Mensonides,Kelsea,acid,$20.00,2024-05-06
+Donnelly,Kelle,medcrlcut,$98.00,2024-05-06
+Wright,Evan,mullet,$70.00,2024-05-06
+Fouks,Kathryn,lngcrlcut,$107.00,2024-05-06
+Fouks,Kathryn,acid,$20.00,2024-05-06
+Weiss,Devin,crlymullet,$73.00,2024-05-06
+Sudol,Claire,mullet,$70.00,2024-05-06
+Yang,Kathleen,lngcut,$78.00,2024-05-06
+Sherman,Sabrina,lngcrlcut,$107.00,2024-05-06
+Erington,Hannah,lngcrlcut,$107.00,2024-05-06
+Erington,Hannah,acid,$20.00,2024-05-06
+Gillie,Allison,medcrlcut,$98.00,2024-05-07
+Pearce,Liz,medcrlcut,$98.00,2024-05-07
+Pearce,Maya,medcrlcut,$98.00,2024-05-07
+Nashar,Malik,shtcrlcut,$86.00,2024-05-07
+Nashar,Malik,acid,$20.00,2024-05-07
+Priest,Lex,bt,$20.00,2024-05-07
+Keogh,Becky,medcrlcut,$98.00,2024-05-07
+Keogh,Becky,acid,$20.00,2024-05-07
+Zalewski,Henry,crlymullet,$73.00,2024-05-07
+Conley,Molly,medcrlcut,$98.00,2024-05-07
+Conley,Molly,acid,$20.00,2024-05-07
+Tibaudo,Christian,lngcut,$98.00,2024-05-07
+Tibaudo,Christian,acid,$20.00,2024-05-07
+Mcdonald,Eliza,lngcut,$98.00,2024-05-09
+Florian,Jason,crlymullet,$73.00,2024-05-09
+Hall,Lindsay,medcrlcut,$98.00,2024-05-09
+Hurni,Sam,medcrlcut,$98.00,2024-05-09
+Hurni,Sam,acid,$20.00,2024-05-09
+Huberty,Sean,mullet,$70.00,2024-05-09
+Huberty,Sean,brdt,$20.00,2024-05-09
+Frutos,Alissa,crlymullet,$73.00,2024-05-09
+Frutos,Alissa,acid,$20.00,2024-05-09
+Frutos,Raya,kcc,$60.00,2024-05-09
+Sherrill,Amanda,shtcrlcut,$86.00,2024-05-09
+Kinsey,Nicholas,mullet,$70.00,2024-05-09
+Castillo,Eloisa,mullet,$70.00,2024-05-09
+Neff,Heather,medcrlcut,$98.00,2024-05-09
+Webb,Jaye,mullet,$70.00,2024-05-09
+Parton,Lacey,medct,$84.00,2024-05-10
+Herring,Nickie,mullet,$70.00,2024-05-10
+Sarmiento,Cherish,lngcrlcut,$107.00,2024-05-10
+Sarmiento,Cherish,acid,$20.00,2024-05-10
+Woodcox,Jenna,lngcrlcut,$107.00,2024-05-10
+Woodcox,Jenna,acid,$20.00,2024-05-10
+Clinger,Christina,lngcrlcut,$107.00,2024-05-10
+Phelps,Annie,crlymullet,$73.00,2024-05-10
+Johnston,Erik,mullet,$70.00,2024-05-10
+Wessel,Alex,lngcrlcut,$107.00,2024-05-10
+Wessel,Alex,acid,$20.00,2024-05-10
+Liu,Abigail,bt,$20.00,2024-05-11
+Mcallister,Jaylxon,medcrlcut,$98.00,2024-05-11
+Dodge,Deborah,lngcut,$98.00,2024-05-11
+Dodge,Deborah,acid,$20.00,2024-05-11
+Carter,Layne,mullet,$70.00,2024-05-11
+McAllister,Jayden,medcrlcut,$98.00,2024-05-11
+Jordan,Chloe,crlymullet,$73.00,2024-05-11
+Jordan,Chloe,acid,$20.00,2024-05-11
+Wouters,Danny,shrtcut,$73.00,2024-05-11
+Stone,Sarah,crlymullet,$73.00,2024-05-11
+Holcomb,Carly,lngcut,$98.00,2024-05-11
+Holcomb,Carly,acid,$20.00,2024-05-11
+Norton,Maiah,mullet,$70.00,2024-05-13
+Norton,Maiah,acid,$20.00,2024-05-13
+Chippewa,Donald,crlymullet,$73.00,2024-05-13
+Sartor,Sebastian,mullet,$70.00,2024-05-13
+Lazarus,Eris,mullet,$70.00,2024-05-13
+Bond,James,shtcrlcut,$86.00,2024-05-13
+Brown,Troy,mullet,$70.00,2024-05-13
+Mcgrath,Daedre,lngcut,$98.00,2024-05-13
+Mcgrath,Daedre,acid,$20.00,2024-05-13
+Rosenbaum,Nyle,mullet,$70.00,2024-05-13
+Butcher,Heidi,shrtcut,$73.00,2024-05-13
+Houghton,Hannah,lngcrlcut,$107.00,2024-05-13
+Houghton,Hannah,acid,$20.00,2024-05-13
+Hansen,Lindsey,lngcut,$98.00,2024-05-13
+Hansen,Lindsey,acid,$20.00,2024-05-13
+Gauss,Margaret,medcrlcut,$98.00,2024-05-14
+Cole,Derek,mullet,$70.00,2024-05-14
+Smith,Adrian,mullet,$70.00,2024-05-14
+Luther,Kathleen,lngcrlcut,$107.00,2024-05-14
+Luther,Kathleen,acid,$20.00,2024-05-14
+Eyal,Natalie,medcrlcut,$78.00,2024-05-14
+Smith,Kaden,shtcrlcut,$86.00,2024-05-14
+Jamal,Ranya,lngcrlcut,$107.00,2024-05-14
+Jamal,Ranya,acid,$20.00,2024-05-14
+Thurman,Payton,mullet,$70.00,2024-05-14
+Fandel,Jacob,crlymullet,$73.00,2024-05-16
+Steiner,Cee jay,lngcut,$98.00,2024-05-16
+Steiner,Cee jay,acid,$20.00,2024-05-16
+Reinhardt,Claire,mullet,$70.00,2024-05-16
+Barone,Kailtin,shrtcut,$73.00,2024-05-16
+Barone,Kailtin,acid,$20.00,2024-05-16
+Nakfoor,Joy,shtcrlcut,$86.00,2024-05-16
+Hatt,Rachel,shrtcut,$73.00,2024-05-16
+Leslie,Jodi,lngcrlcut,$107.00,2024-05-16
+Leslie,Jodi,acid,$20.00,2024-05-16
+Leslie,Jodi,mis,$5.00,2024-05-16
+Eyal,Natalie,adj,$0.00,2024-05-16
+Nevins,Aaron,crlymullet,$73.00,2024-05-16
+Lynch,Linda,lngcrlcut,$107.00,2024-05-17
+Lynch,Linda,acid,$20.00,2024-05-17
+Lynch,Linda,medcrlcut,$0.00,2024-05-17
+Fries,Elli,mullet,$70.00,2024-05-17
+Suydam,Kyleigh,lngcrlcut,$107.00,2024-05-17
+Tarasenko,Travis,mullet,$70.00,2024-05-17
+Bayerl,Georgia,crlymullet,$73.00,2024-05-17
+Justice,Averi,lngcrlcut,$107.00,2024-05-17
+Justice,Averi,acid,$20.00,2024-05-17
+Black,Ben,crlymullet,$73.00,2024-05-17
+Weiss,Logan,shtcrlcut,$86.00,2024-05-17
+Elliott,Melissa,lngcut,$98.00,2024-05-17
+Elliott,Melissa,acid,$20.00,2024-05-17
+Dell,Alicia,lngcrlcut,$87.00,2024-05-18
+Morley,Andrea,acid,$20.00,2024-05-18
+Morley,Andrea,lngcrlcut,$107.00,2024-05-18
+Hoeschele,Olivia,lngcut,$98.00,2024-05-18
+Hoeschele,Olivia,acid,$20.00,2024-05-18
+Robbins,Jami,mullet,$70.00,2024-05-18
+Liolli,Grace,medcrlcut,$98.00,2024-05-18
+Liolli,Grace,acid,$20.00,2024-05-18
+Roman,Wrex,mullet,$70.00,2024-05-18
+Williams,Stephanie,lngcut,$98.00,2024-05-18
+Decator,Olivia,mullet,$70.00,2024-05-20
+Jackson,Anna,bt,$20.00,2024-05-20
+Colon,Devyn,fdclipper,$0.00,2024-05-20
+Strong,Bonnie,shtcrlcut,$86.00,2024-05-20
+Strong,Bonnie,acid,$20.00,2024-05-20
+Greene,Isabel,medcrlcut,$98.00,2024-05-20
+Smihal,Bennett,shtcrlcut,$86.00,2024-05-20
+Jakubow,Larissa,medcrlcut,$98.00,2024-05-20
+Jakubow,Larissa,acid,$20.00,2024-05-20
+Johnson,Leah,lngcrlcut,$107.00,2024-05-20
+Johnson,Leah,acid,$20.00,2024-05-20
+Nuno,Chelsie,lngcrlcut,$107.00,2024-05-20
+Syrocki,Nichole,crlymullet,$73.00,2024-05-21
+Hanlon,Kelly,mullet,$70.00,2024-05-21
+Bartrem,William,mullet,$70.00,2024-05-21
+Naccareko,Susie,mullet,$70.00,2024-05-21
+Naccareko,Susie,acid,$20.00,2024-05-21
+Kiesgen,Mackenzie,mullet,$70.00,2024-05-21
+Mackenzie,Thomas,crlymullet,$73.00,2024-05-21
+Mackenzie,Thomas,brdt,$20.00,2024-05-21
+Smith,Malachi,mullet,$70.00,2024-05-21
+Cook,Nick,shtcrlcut,$73.10,2024-05-21
+Niswander,Hannah,lngcut,$98.00,2024-05-23
+Merbaum,Lindsay,lngcrlcut,$107.00,2024-05-23
+Merbaum,Lindsay,acid,$20.00,2024-05-23
+Kazenko,Kailey,lngcut,$98.00,2024-05-23
+Manuel,Maya,medcrlcut,$98.00,2024-05-23
+Clark,Sara,lngcrlcut,$107.00,2024-05-23
+Tomlinson,Maria,lngcrlcut,$107.00,2024-05-23
+Tomlinson,Maria,acid,$20.00,2024-05-23
+Phan,Cavalli,chldmlt,$50.00,2024-05-23
+Matzkows,Izzy,mullet,$50.00,2024-05-23
+Pontifex,Ava,kcc,$60.00,2024-05-23
+Pontifex,Ava,acid,$20.00,2024-05-23
+Witczak,Bree,medcrlcut,$98.00,2024-05-23
+Witczak,Bree,acid,$20.00,2024-05-23
+Cardinal,Sara,medcrlcut,$98.00,2024-05-23
+Cardinal,Sara,acid,$20.00,2024-05-23
+Saylor,Nolan,medcrlcut,$98.00,2024-05-24
+Flannigan,Miranda,mullet,$70.00,2024-05-24
+Douglas,Peighton,crlymullet,$73.00,2024-05-24
+Douglas,Peighton,acid,$0.00,2024-05-24
+Cooper,Nathan,crlymullet,$73.00,2024-05-24
+Carbary,Marissa,lngcut,$98.00,2024-05-24
+Martinez,James,lngcut,$98.00,2024-05-24
+Martinez,James,acid,$20.00,2024-05-24
+Shannon,Megan,shrtcut,$73.00,2024-05-24
+Bailey,Devyn,lngcrlcut,$107.00,2024-05-24
+Anderson,Kara,acid,$20.00,2024-05-24
+Anderson,Kara,lngcrlcut,$107.00,2024-05-24`;
+    return parseCSVData(csvData);
+  }, []);
+
+  const filteredClients = useMemo(() => {
+    return allClients.filter(client => {
+      const matchesSearch = Object.values(client).some(value =>
+        value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      const matchesService = filters.service === '' || client.service === filters.service;
+      const matchesDate = 
+        (filters.dateStart === '' || client.date >= filters.dateStart) &&
+        (filters.dateEnd === '' || client.date <= filters.dateEnd);
+
+      return matchesSearch && matchesService && matchesDate;
+    });
+  }, [allClients, searchTerm, filters]);
+
+  const sortedClients = useMemo(() => {
+    let sortableClients = [...filteredClients];
+    if (sortConfig.key !== null) {
+      sortableClients.sort((a, b) => {
+        if (a[sortConfig.key!] < b[sortConfig.key!]) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (a[sortConfig.key!] > b[sortConfig.key!]) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableClients;
+  }, [filteredClients, sortConfig]);
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentClients = sortedClients.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  const requestSort = (key: keyof Client) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSend = () => {
+    if (input.trim().toLowerCase() === 'show clients') {
+      setShowTable(true);
+      setMessages(prev => [...prev, { text: "Here's the client table:", isBot: true }]);
+    } else {
+      setMessages(prev => [
+        ...prev,
+        { text: input, isBot: false },
+        { text: "I'm sorry, I don't understand that command. Type 'show clients' to see the client table.", isBot: true }
+      ]);
+    }
+    setInput('');
+  };
+
+  const uniqueServices = useMemo(() => [...new Set(allClients.map(client => client.service))], [allClients]);
+
+  return (
+    <div className="flex flex-col h-screen bg-black text-white p-4">
+      <div className="flex-grow overflow-auto mb-4 bg-gray-900 rounded-lg border border-gray-700 shadow-sm">
+        <div className="p-4 space-y-4">
+          {messages.map((message, index) => (
+            <div 
+              key={index} 
+              className={`p-3 rounded-lg ${
+                message.isBot 
+                  ? 'bg-gray-800 text-gray-300' 
+                  : 'bg-blue-600 text-white ml-auto'
+              } max-w-[80%] break-words`}
+            >
+              {message.text}
+            </div>
+          ))}
+        </div>
+        {showTable && (
+          <div className="mt-4 p-4">
+            <div className="flex flex-wrap gap-2 mb-4">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search clients..."
+                className="flex-grow px-3 py-2 bg-gray-800 text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <select
+                name="service"
+                value={filters.service}
+                onChange={handleFilterChange}
+                className="px-3 py-2 bg-gray-800 text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Services</option>
+                {uniqueServices.map(service => (
+                  <option key={service} value={service}>{service}</option>
+                ))}
+              </select>
+              <input
+                type="date"
+                name="dateStart"
+                value={filters.dateStart}
+                onChange={handleFilterChange}
+                className="px-3 py-2 bg-gray-800 text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="date"
+                name="dateEnd"
+                value={filters.dateEnd}
+                onChange={handleFilterChange}
+                className="px-3 py-2 bg-gray-800 text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-800">
+                    {Object.keys(currentClients[0] || {}).map(key => (
+                      <th 
+                        key={key}
+                        onClick={() => requestSort(key as keyof Client)}
+                        className="p-2 text-left text-gray-300 font-medium cursor-pointer hover:bg-gray-700"
+                      >
+                        {key.charAt(0).toUpperCase() + key.slice(1)}
+                        {sortConfig.key === key && (
+                          <span className="ml-1">{sortConfig.direction === 'ascending' ? '↑' : '↓'}</span>
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentClients.map((client, index) => (
+                    <tr key={index} className="border-b border-gray-700 hover:bg-gray-700">
+                      {Object.values(client).map((value, cellIndex) => (
+                        <td key={cellIndex} className="p-2">
+                          {cellIndex === 2 ? `$${value.toFixed(2)}` : value}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 flex justify-between items-center">
+              <button 
+                onClick={() => paginate(currentPage - 1)} 
+                disabled={currentPage === 1}
+                className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span>Page {currentPage} of {Math.ceil(sortedClients.length / itemsPerPage)}</span>
+              <button 
+                onClick={() => paginate(currentPage + 1)} 
+                disabled={indexOfLastItem >= sortedClients.length}
+                className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                Next
+              </button>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="px-3 py-2 bg-gray-800 text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {[10, 20, 30, 40, 50].map(pageSize => (
+                  <option key={pageSize} value={pageSize}>
+                    Show {pageSize}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="flex space-x-2">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+          className="flex-grow px-3 py-2 bg-gray-800 text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Type 'show clients'..."
+        />
+        <button 
+          onClick={handleSend}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default SalonChatbot;
