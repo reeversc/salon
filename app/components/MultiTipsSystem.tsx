@@ -76,7 +76,7 @@ const MultiTipsSystem: React.FC = () => {
     { id: 10, exercise: "Glute Bridges", muscleGroup: "Glutes, Hamstrings" },
   ], []);
 
-  const currentItems = useMemo(() => {
+  const currentItems: (Tip | Exercise)[] = useMemo(() => {
     switch(tableType) {
       case 'hair':
         return hairTips;
@@ -90,17 +90,18 @@ const MultiTipsSystem: React.FC = () => {
   }, [tableType, hairTips, nutritionTips, legExercises]);
 
   const filteredItems = useMemo(() => {
-    return currentItems.filter(item => {
+    return currentItems.filter((item: Tip | Exercise) => {
       const matchesSearch = Object.values(item).some(value =>
         value.toString().toLowerCase().includes(searchTerm.toLowerCase())
       );
       
-      const matchesCategory = filters.category === '' || 
-        ('category' in item && item.category === filters.category);
-      const matchesMuscleGroup = filters.muscleGroup === '' || 
-        ('muscleGroup' in item && item.muscleGroup.includes(filters.muscleGroup));
-
-      return matchesSearch && (matchesCategory || matchesMuscleGroup);
+      if ('category' in item) {
+        return matchesSearch && (filters.category === '' || item.category === filters.category);
+      } else if ('muscleGroup' in item) {
+        return matchesSearch && (filters.muscleGroup === '' || item.muscleGroup.includes(filters.muscleGroup));
+      }
+      
+      return false;
     });
   }, [currentItems, searchTerm, filters]);
 
