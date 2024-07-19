@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from 'react';
 
-// Define types for our data
 interface Tip {
   id: number;
   tip: string;
@@ -23,7 +22,6 @@ interface Message {
 }
 
 const MultiTipsSystem: React.FC = () => {
-  // State declarations
   const [messages, setMessages] = useState<Message[]>([
     { text: "Type 'hair tips' for hairstyling tips, 'nutrition tips' for nutrition advice, or 'leg exercises' for leg workout ideas.", isBot: true }
   ]);
@@ -39,7 +37,6 @@ const MultiTipsSystem: React.FC = () => {
     muscleGroup: ''
   });
 
-  // Data definitions
   const hairTips: Tip[] = useMemo(() => [
     { id: 1, tip: "Use a heat protectant spray before styling with hot tools", category: "Protection" },
     { id: 2, tip: "Deep condition your hair once a week", category: "Maintenance" },
@@ -79,7 +76,6 @@ const MultiTipsSystem: React.FC = () => {
     { id: 10, exercise: "Glute Bridges", muscleGroup: "Glutes, Hamstrings" },
   ], []);
 
-  // Memoized computations
   const currentItems = useMemo(() => {
     switch(tableType) {
       case 'hair':
@@ -135,7 +131,6 @@ const MultiTipsSystem: React.FC = () => {
     }
   }, [tableType, currentItems, legExercises]);
 
-  // Event handlers
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   const requestSort = (key: keyof Item) => {
@@ -175,7 +170,6 @@ const MultiTipsSystem: React.FC = () => {
     setFilters({ category: '', muscleGroup: '' });
   };
 
-  // Render
   return (
     <div className="flex flex-col h-screen bg-black text-white p-4">
       <div className="flex-grow overflow-auto mb-4 bg-gray-900 rounded-lg border border-gray-700 shadow-sm">
