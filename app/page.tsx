@@ -1,9 +1,9 @@
-import SalonChatbot from './components/SalonChatbot'
+import MultiTipsSystem from './components/MultiTipsSystem'
 
 export default function Home() {
   return (
     <main>
-      <SalonChatbot />
+      <MultiTipsSystem />
     </main>
   )
 }
