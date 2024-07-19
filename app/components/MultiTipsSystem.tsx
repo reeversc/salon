@@ -99,9 +99,9 @@ const MultiTipsSystem: React.FC = () => {
         value.toString().toLowerCase().includes(searchTerm.toLowerCase())
       );
       const matchesCategory = filters.category === '' || 
-        ('category' in item && 'category' in filters && item.category === filters.category);
+        ('category' in item && item.category === filters.category);
       const matchesMuscleGroup = filters.muscleGroup === '' || 
-        ('muscleGroup' in item && 'muscleGroup' in filters && item.muscleGroup.includes(filters.muscleGroup));
+        ('muscleGroup' in item && item.muscleGroup.includes(filters.muscleGroup));
 
       return matchesSearch && (matchesCategory || matchesMuscleGroup);
     });
