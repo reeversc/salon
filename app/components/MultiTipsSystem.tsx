@@ -174,7 +174,7 @@ const MultiTipsSystem: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-black text-white p-4">
-      <div className="flex-grow overflow-auto mb-4 bg-gray-900 rounded-lg border border-gray-700 shadow-sm">
+      <div className="flex-grow overflow-auto mb-4 bg-gray-900 rounded-lg border border-gray-700 shadow-sm" style={{ minHeight: '0' }}>
         <div className="p-4 space-y-4">
           {messages.map((message, index) => (
             <div 
@@ -271,21 +271,23 @@ const MultiTipsSystem: React.FC = () => {
           </div>
         )}
       </div>
-      <div className="flex space-x-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-          className="flex-grow px-3 py-2 bg-gray-800 text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Type 'hair tips', 'nutrition tips', or 'leg exercises'..."
-        />
-        <button 
-          onClick={handleSend}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          Send
-        </button>
+      <div className="mt-auto">
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+            className="flex-grow px-3 py-2 bg-gray-800 text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Type 'hair tips', 'nutrition tips', or 'leg exercises'..."
+          />
+          <button 
+            onClick={handleSend}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Send
+          </button>
+        </div>
       </div>
     </div>
   );
