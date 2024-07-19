@@ -90,16 +90,18 @@ const MultiTipsSystem: React.FC = () => {
   }, [tableType, hairTips, nutritionTips, legExercises]);
 
   const filteredItems = useMemo(() => {
-    return currentItems.filter((item): item is Tip | Exercise => {
+    return currentItems.filter((item) => {
       const matchesSearch = Object.values(item).some(value =>
         value.toString().toLowerCase().includes(searchTerm.toLowerCase())
       );
-      const matchesCategory = filters.category === '' || 
-        ('category' in item && item.category === filters.category);
-      const matchesMuscleGroup = filters.muscleGroup === '' || 
-        ('muscleGroup' in item && item.muscleGroup.includes(filters.muscleGroup));
-
-      return matchesSearch && (matchesCategory || matchesMuscleGroup);
+      
+      if ('category' in item) {
+        return matchesSearch && (filters.category === '' || item.category === filters.category);
+      } else if ('muscleGroup' in item) {
+        return matchesSearch && (filters.muscleGroup === '' || item.muscleGroup.includes(filters.muscleGroup));
+      }
+      
+      return false;
     });
   }, [currentItems, searchTerm, filters]);
 
@@ -127,7 +129,7 @@ const MultiTipsSystem: React.FC = () => {
     if (tableType === 'leg') {
       return Array.from(new Set(legExercises.flatMap(exercise => exercise.muscleGroup.split(', '))));
     } else {
-      return Array.from(new Set(currentItems.map((item: Tip) => item.category)));
+      return Array.from(new Set(currentItems.filter((item): item is Tip => 'category' in item).map(item => item.category)));
     }
   }, [tableType, currentItems, legExercises]);
 
