@@ -279,7 +279,7 @@ const MultiTipsSystem: React.FC = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
             className="flex-grow px-3 py-2 bg-gray-800 text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Type 'hair tips', 'nutrition tips', or 'leg exercises'..."
+            placeholder="What is your interest?..."
           />
           <button 
             onClick={handleSend}
