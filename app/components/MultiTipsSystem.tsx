@@ -1,8 +1,6 @@
 "use client";
 
-// File: MultiTipsSystem.tsx
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 
 // Define types for our data
 interface Tip {
@@ -96,7 +94,7 @@ const MultiTipsSystem: React.FC = () => {
   }, [tableType, hairTips, nutritionTips, legExercises]);
 
   const filteredItems = useMemo(() => {
-    return currentItems.filter(item => {
+    return currentItems.filter((item: Tip | Exercise) => {
       const matchesSearch = Object.values(item).some(value =>
         value.toString().toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -136,22 +134,23 @@ const MultiTipsSystem: React.FC = () => {
   }, [tableType, currentItems, legExercises]);
 
   // Event handlers
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  const paginate = useCallback((pageNumber: number) => setCurrentPage(pageNumber), []);
 
-  const requestSort = (key: keyof Item) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
-  };
+  const requestSort = useCallback((key: keyof Item) => {
+    setSortConfig(prevConfig => {
+      if (prevConfig.key === key && prevConfig.direction === 'ascending') {
+        return { key, direction: 'descending' };
+      }
+      return { key, direction: 'ascending' };
+    });
+  }, []);
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
-  };
+  }, []);
 
-  const handleSend = () => {
+  const handleSend = useCallback(() => {
     const lowerInput = input.trim().toLowerCase();
     if (lowerInput === 'hair tips') {
       setShowTable(true);
@@ -173,7 +172,7 @@ const MultiTipsSystem: React.FC = () => {
     setCurrentPage(1);
     setSearchTerm('');
     setFilters({ category: '', muscleGroup: '' });
-  };
+  }, [input]);
 
   // Render
   return (
